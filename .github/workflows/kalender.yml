@@ -4,7 +4,7 @@
 #   SFTP_HOST      z. B. access-1234567890.webspace-host.com
 #   SFTP_USER      SFTP-Benutzername aus dem IONOS-Kundenbereich
 #   SFTP_PASSWORD  zugehöriges Passwort
-#   SFTP_DIR       Zielordner auf dem Webspace, z. B. /kalender
+#   (kein SFTP_DIR nötig: hochgeladen wird in den Startordner des SFTP-Benutzers)
 
 name: Spielplan auf IONOS aktualisieren
 
@@ -22,9 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -35,20 +35,22 @@ jobs:
           sudo apt-get install -y -qq lftp
 
       - name: Kalender erzeugen
-        run: python fussballde_kalender.py --out tus-harpen.ics
+        run: |
+          python fussballde_kalender.py --out tus-harpen.ics
+          ls -l tus-harpen.ics
 
       - name: Auf IONOS hochladen
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_USER: ${{ secrets.SFTP_USER }}
           LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
-          SFTP_DIR: ${{ secrets.SFTP_DIR }}
         run: |
+          # Sorgt dafür, dass der Webserver die Datei als Kalender ausliefert
+          printf 'AddType "text/calendar; charset=utf-8" .ics\n' > .htaccess
           lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "
             set sftp:auto-confirm yes;
             set net:max-retries 2;
             set net:timeout 30;
-            mkdir -p -f $SFTP_DIR;
-            cd $SFTP_DIR;
             put tus-harpen.ics;
+            put .htaccess;
             bye"
