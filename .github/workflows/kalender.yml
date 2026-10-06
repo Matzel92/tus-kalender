@@ -1,0 +1,54 @@
+# Ablage im Repository unter:  .github/workflows/kalender.yml
+#
+# Benötigte Secrets (Settings -> Secrets and variables -> Actions -> Secrets):
+#   SFTP_HOST      z. B. access-1234567890.webspace-host.com
+#   SFTP_USER      SFTP-Benutzername aus dem IONOS-Kundenbereich
+#   SFTP_PASSWORD  zugehöriges Passwort
+#   SFTP_DIR       Zielordner auf dem Webspace, z. B. /kalender
+
+name: Spielplan auf IONOS aktualisieren
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # alle 15 Minuten (GitHub startet teils mit Verzögerung)
+  workflow_dispatch:         # manuell startbar über den Reiter "Actions"
+
+concurrency:
+  group: kalender
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pakete installieren
+        run: |
+          pip install -q requests beautifulsoup4 fonttools
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lftp
+
+      - name: Kalender erzeugen
+        run: python fussballde_kalender.py --out tus-harpen.ics
+
+      - name: Auf IONOS hochladen
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          SFTP_DIR: ${{ secrets.SFTP_DIR }}
+        run: |
+          lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "
+            set sftp:auto-confirm yes;
+            set net:max-retries 2;
+            set net:timeout 30;
+            mkdir -p -f $SFTP_DIR;
+            cd $SFTP_DIR;
+            put tus-harpen.ics;
+            bye"
