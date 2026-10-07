@@ -30,7 +30,7 @@ from reportlab.platypus import (Image, Paragraph, SimpleDocTemplate, Spacer,
 import os
 
 BERLIN = ZoneInfo("Europe/Berlin")
-FONT, FONT_BOLD, FONT_SIZE = "Helvetica", "Helvetica-Bold", 8.5
+FONT, FONT_BOLD, FONT_SIZE = "Helvetica", "Helvetica-Bold", 8
 PAD = 4  # Innenabstand links/rechts in Punkt
 WOCHENTAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
 MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli",
@@ -106,6 +106,8 @@ def to_spiel(ev: dict[str, str]) -> Spiel | None:
     teile = [t.strip() for t in label.split("|")] if label else []
     mannschaft = teile[0] if teile else ""
     wettbewerb = " · ".join(teile[1:]) if len(teile) > 1 else ""
+    if "freundschaft" in wettbewerb.lower():
+        wettbewerb = "Freundschaftsspiel"  # Kreis-, Verbands-, Hallen-… einheitlich
 
     ort = ics_unescape(ev.get("LOCATION", "")).replace(" | ", ", ")
     return Spiel(tag, zeit, mannschaft, wettbewerb, heim.strip(), gast.strip(), ort, abgesetzt)
@@ -134,7 +136,7 @@ def build_pdf(spiele: list[Spiel], out: str, titel: str, von: date, bis: date, v
 
     s_titel = ParagraphStyle("t", fontName="Helvetica-Bold", fontSize=18, leading=22, textColor=DUNKEL)
     s_unter = ParagraphStyle("u", fontName="Helvetica", fontSize=10, leading=13, textColor=GRAU)
-    s_zelle = ParagraphStyle("z", fontName=FONT, fontSize=FONT_SIZE, leading=10.5, alignment=TA_LEFT)
+    s_zelle = ParagraphStyle("z", fontName=FONT, fontSize=FONT_SIZE, leading=10, alignment=TA_LEFT)
     s_kopf = ParagraphStyle("k", parent=s_zelle, fontName="Helvetica-Bold", textColor=colors.white)
     s_tag = ParagraphStyle("d", parent=s_zelle, fontName="Helvetica-Bold", fontSize=9.5, textColor=DUNKEL)
 
@@ -170,7 +172,7 @@ def build_pdf(spiele: list[Spiel], out: str, titel: str, von: date, bis: date, v
 
     kopf = [Paragraph(h, s_kopf) for h in
             ("Zeit", "Mannschaft", "Heim", "Gast", "Wettbewerb", "Spielort")]
-    breiten = [14 * mm, 24 * mm, 59 * mm, 59 * mm, 37 * mm, 84 * mm]  # = 277 mm
+    breiten = [12 * mm, 21 * mm, 55 * mm, 55 * mm, 27 * mm, 111 * mm]  # = 281 mm
 
     daten = [kopf]
     stil = [
@@ -217,13 +219,13 @@ def build_pdf(spiele: list[Spiel], out: str, titel: str, von: date, bis: date, v
         canvas.saveState()
         canvas.setFont("Helvetica", 7.5)
         canvas.setFillColor(GRAU)
-        canvas.drawString(10 * mm, 7 * mm,
+        canvas.drawString(8 * mm, 7 * mm,
                           f"Quelle: fussball.de · Stand: {stand:%d.%m.%Y, %H:%M} Uhr · "
                           "Kurzfristige Änderungen möglich")
-        canvas.drawRightString(seite_b - 10 * mm, 7 * mm, f"Seite {doc.page}")
+        canvas.drawRightString(seite_b - 8 * mm, 7 * mm, f"Seite {doc.page}")
         canvas.restoreState()
 
-    doc = SimpleDocTemplate(out, pagesize=landscape(A4), leftMargin=10 * mm, rightMargin=10 * mm,
+    doc = SimpleDocTemplate(out, pagesize=landscape(A4), leftMargin=8 * mm, rightMargin=8 * mm,
                             topMargin=10 * mm, bottomMargin=13 * mm, title=titel, author=verein)
     titelblock = [
         Paragraph(escape(titel), s_titel),
@@ -232,7 +234,7 @@ def build_pdf(spiele: list[Spiel], out: str, titel: str, von: date, bis: date, v
                   f"{sum(1 for s in spiele if not s.abgesetzt)} Spiele · "
                   f"Spiele des Vereins sind fett markiert", s_unter),
     ]
-    nutzbreite = seite_b - 20 * mm
+    nutzbreite = seite_b - 16 * mm
     logo_bild = None
     if logo and os.path.exists(logo):
         try:
