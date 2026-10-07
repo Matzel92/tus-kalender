@@ -4,6 +4,7 @@ Erzeugt aus der Kalenderdatei (tus-harpen.ics) eine druckfertige PDF-Liste
 aller Spiele der nächsten Monate, nach Tagen gruppiert.
 
 Benötigt:  pip install reportlab
+Logo:      logo.png (PNG oder JPG) neben das Skript legen, oder --logo angeben
 Beispiel:  python spielplan_pdf.py tus-harpen.ics --out spielplan.pdf --months 3
 """
 
@@ -22,10 +23,15 @@ from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.platypus import (Paragraph, SimpleDocTemplate, Spacer, Table,
-                                TableStyle)
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase.pdfmetrics import stringWidth
+from reportlab.platypus import (Image, Paragraph, SimpleDocTemplate, Spacer,
+                                Table, TableStyle)
+import os
 
 BERLIN = ZoneInfo("Europe/Berlin")
+FONT, FONT_BOLD, FONT_SIZE = "Helvetica", "Helvetica-Bold", 8.5
+PAD = 4  # Innenabstand links/rechts in Punkt
 WOCHENTAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
 MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli",
           "August", "September", "Oktober", "November", "Dezember"]
@@ -121,27 +127,50 @@ def fmt_datum(d: date) -> str:
 # PDF bauen
 # --------------------------------------------------------------------------
 
-def build_pdf(spiele: list[Spiel], out: str, titel: str, von: date, bis: date, verein: str) -> None:
+def build_pdf(spiele: list[Spiel], out: str, titel: str, von: date, bis: date, verein: str,
+              logo: str | None = None) -> None:
     stand = datetime.now(BERLIN)
     seite_b, seite_h = landscape(A4)
 
     s_titel = ParagraphStyle("t", fontName="Helvetica-Bold", fontSize=18, leading=22, textColor=DUNKEL)
     s_unter = ParagraphStyle("u", fontName="Helvetica", fontSize=10, leading=13, textColor=GRAU)
-    s_zelle = ParagraphStyle("z", fontName="Helvetica", fontSize=8.5, leading=10.5, alignment=TA_LEFT)
+    s_zelle = ParagraphStyle("z", fontName=FONT, fontSize=FONT_SIZE, leading=10.5, alignment=TA_LEFT)
     s_kopf = ParagraphStyle("k", parent=s_zelle, fontName="Helvetica-Bold", textColor=colors.white)
     s_tag = ParagraphStyle("d", parent=s_zelle, fontName="Helvetica-Bold", fontSize=9.5, textColor=DUNKEL)
 
-    def zelle(text: str, bold: bool = False, aus: bool = False) -> Paragraph:
-        t = escape(text)
+    def kuerzen(text: str, breite: float, bold: bool) -> str:
+        """Text so kürzen, dass er einzeilig in die Spalte passt."""
+        font = FONT_BOLD if bold else FONT
+        platz = breite - 2 * PAD - 1
+        if stringWidth(text, font, FONT_SIZE) <= platz:
+            return text
+        while text and stringWidth(text + "…", font, FONT_SIZE) > platz:
+            text = text[:-1]
+        return text.rstrip(" ,/-") + "…"
+
+    def zelle(text: str, breite: float, bold: bool = False, aus: bool = False) -> Paragraph:
+        t = escape(kuerzen(text, breite, bold))
         if bold:
             t = f"<b>{t}</b>"
         if aus:
             t = f'<strike><font color="#8A8F98">{t}</font></strike>'
         return Paragraph(t, s_zelle)
 
+    def ort_kurz(ort: str, breite: float) -> str:
+        """Spielort einzeilig: erst komplett, sonst Platz + PLZ/Ort, sonst gekürzt."""
+        platz = breite - 2 * PAD - 1
+        if stringWidth(ort, FONT, FONT_SIZE) <= platz:
+            return ort
+        teile = [t.strip() for t in ort.split(",") if t.strip()]
+        if len(teile) >= 3:
+            kurz = f"{teile[0]}, {teile[-1]}"
+            if stringWidth(kurz, FONT, FONT_SIZE) <= platz:
+                return kurz
+        return ort
+
     kopf = [Paragraph(h, s_kopf) for h in
             ("Zeit", "Mannschaft", "Heim", "Gast", "Wettbewerb", "Spielort")]
-    breiten = [16 * mm, 30 * mm, 58 * mm, 58 * mm, 42 * mm, 73 * mm]  # = 277 mm
+    breiten = [14 * mm, 24 * mm, 59 * mm, 59 * mm, 37 * mm, 84 * mm]  # = 277 mm
 
     daten = [kopf]
     stil = [
@@ -149,8 +178,8 @@ def build_pdf(spiele: list[Spiel], out: str, titel: str, von: date, bis: date, v
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("TOPPADDING", (0, 0), (-1, -1), 3),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ("LEFTPADDING", (0, 0), (-1, -1), 4),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("LEFTPADDING", (0, 0), (-1, -1), PAD),
+        ("RIGHTPADDING", (0, 0), (-1, -1), PAD),
     ]
 
     letzter_tag = None
@@ -167,12 +196,12 @@ def build_pdf(spiele: list[Spiel], out: str, titel: str, von: date, bis: date, v
         if sp.abgesetzt:
             zeit = "abges."
         daten.append([
-            zelle(zeit, aus=sp.abgesetzt),
-            zelle(sp.mannschaft, aus=sp.abgesetzt),
-            zelle(sp.heim, bold=heim_eigen, aus=sp.abgesetzt),
-            zelle(sp.gast, bold=gast_eigen, aus=sp.abgesetzt),
-            zelle(sp.wettbewerb, aus=sp.abgesetzt),
-            zelle(sp.ort, aus=sp.abgesetzt),
+            zelle(zeit, breiten[0], aus=sp.abgesetzt),
+            zelle(sp.mannschaft, breiten[1], aus=sp.abgesetzt),
+            zelle(sp.heim, breiten[2], bold=heim_eigen and not sp.abgesetzt, aus=sp.abgesetzt),
+            zelle(sp.gast, breiten[3], bold=gast_eigen and not sp.abgesetzt, aus=sp.abgesetzt),
+            zelle(sp.wettbewerb, breiten[4], aus=sp.abgesetzt),
+            zelle(ort_kurz(sp.ort, breiten[5]), breiten[5], aus=sp.abgesetzt),
         ])
         r = len(daten) - 1
         stil.append(("LINEBELOW", (0, r), (-1, r), 0.4, LINIE))
@@ -196,15 +225,40 @@ def build_pdf(spiele: list[Spiel], out: str, titel: str, von: date, bis: date, v
 
     doc = SimpleDocTemplate(out, pagesize=landscape(A4), leftMargin=10 * mm, rightMargin=10 * mm,
                             topMargin=10 * mm, bottomMargin=13 * mm, title=titel, author=verein)
-    story = [
+    titelblock = [
         Paragraph(escape(titel), s_titel),
         Spacer(1, 2),
         Paragraph(f"Alle Spiele vom {von:%d.%m.%Y} bis {bis:%d.%m.%Y} · "
                   f"{sum(1 for s in spiele if not s.abgesetzt)} Spiele · "
-                  f"Heim- und Gastspiele des Vereins sind fett markiert", s_unter),
-        Spacer(1, 6),
-        tabelle,
+                  f"Spiele des Vereins sind fett markiert", s_unter),
     ]
+    nutzbreite = seite_b - 20 * mm
+    logo_bild = None
+    if logo and os.path.exists(logo):
+        try:
+            iw, ih = ImageReader(logo).getSize()
+            h = 20 * mm
+            w = min(h * iw / ih, 50 * mm)
+            h = w * ih / iw
+            logo_bild = Image(logo, width=w, height=h)
+        except Exception as e:
+            print(f"Logo konnte nicht geladen werden ({e}) – PDF wird ohne Logo erstellt.", file=sys.stderr)
+    elif logo:
+        print(f"Logo '{logo}' nicht gefunden – PDF wird ohne Logo erstellt.", file=sys.stderr)
+
+    if logo_bild:
+        kopfbereich = Table([[titelblock, logo_bild]],
+                            colWidths=[nutzbreite - logo_bild.drawWidth, logo_bild.drawWidth])
+        kopfbereich.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (0, 0), "BOTTOM"), ("VALIGN", (1, 0), (1, 0), "TOP"),
+            ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ]))
+        story = [kopfbereich]
+    else:
+        story = list(titelblock)
+    story += [Spacer(1, 6), tabelle]
     doc.build(story, onFirstPage=fuss, onLaterPages=fuss)
 
 
@@ -216,6 +270,7 @@ def main() -> int:
     p.add_argument("--titel", default="TuS Bochum-Harpen – Spielplan")
     p.add_argument("--verein", default="Harpen", help="Namensteil zum Hervorheben der eigenen Teams")
     p.add_argument("--team", action="append", help="Nur bestimmte Mannschaften (mehrfach möglich)")
+    p.add_argument("--logo", default="logo.png", help="Vereinslogo (PNG/JPG), Standard: logo.png")
     args = p.parse_args()
 
     von = datetime.now(BERLIN).date()
@@ -226,7 +281,7 @@ def main() -> int:
         spiele = [s for s in spiele if any(t in s.mannschaft.lower() for t in wanted)]
     spiele.sort(key=lambda s: (s.tag, s.zeit or "99:99", s.mannschaft))
 
-    build_pdf(spiele, args.out, args.titel, von, bis, args.verein)
+    build_pdf(spiele, args.out, args.titel, von, bis, args.verein, args.logo)
     print(f"{len(spiele)} Spiele vom {von:%d.%m.%Y} bis {bis:%d.%m.%Y} -> {args.out}")
     return 0
 
