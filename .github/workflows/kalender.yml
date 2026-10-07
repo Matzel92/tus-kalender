@@ -30,7 +30,7 @@ jobs:
 
       - name: Pakete installieren
         run: |
-          pip install -q requests beautifulsoup4 fonttools
+          pip install -q requests beautifulsoup4 fonttools reportlab
           sudo apt-get update -qq
           sudo apt-get install -y -qq lftp
 
@@ -38,6 +38,9 @@ jobs:
         run: |
           python fussballde_kalender.py --out tus-harpen.ics
           ls -l tus-harpen.ics
+
+      - name: PDF erzeugen (nächste 3 Monate)
+        run: python spielplan_pdf.py tus-harpen.ics --out spielplan.pdf --months 3
 
       - name: Auf IONOS hochladen
         env:
@@ -53,4 +56,5 @@ jobs:
             set net:timeout 30;
             put tus-harpen.ics;
             put .htaccess;
+            put spielplan.pdf;
             bye"
