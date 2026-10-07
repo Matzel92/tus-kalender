@@ -406,7 +406,10 @@ def build_ics(matches: list[Match], cal_name: str, duration_min: int, stamp: dat
         "X-PUBLISHED-TTL:PT1H",
     ]
     for m in matches:
+        team = m.label.split("|")[0].strip()  # z. B. "B-Junioren" aus "B-Junioren | Kreispokal"
         summary = f"{m.home} – {m.away}"
+        if team:
+            summary = f"[{team}] {summary}"
         if m.cancelled:
             summary = "ABGESETZT: " + summary
         desc_parts = [p for p in (m.label, m.status_note, m.url) if p]
