@@ -74,6 +74,7 @@ class Match:
     location: str = ""
     url: str = ""
     status_note: str = ""
+    marker: bool = False  # Platzhalter am alten Termin eines verlegten Spiels
 
     @property
     def cancelled(self) -> bool:
@@ -249,6 +250,9 @@ def fetch_matches(club_id: str, von: date, bis: date, debug_html: Path | None) -
                 if m.uid not in found:
                     found[m.uid] = m
                     new += 1
+                elif found[m.uid].marker and not m.marker:
+                    found[m.uid] = m  # Platzhalter durch echten Eintrag ersetzen
+                    new += 1
             raw_rows = html.count("row-competition")  # zählt auch "spielfrei"-Zeilen
             if raw_rows < PAGE_SIZE or new == 0:
                 break
@@ -346,6 +350,10 @@ def parse_matchplan(html: str, deob: "Deobfuscator | None" = None) -> list[Match
             if last is not None and text:
                 mv = re.search(r"Spielst(?:ä|ae)tte:\s*(.*)", text)
                 last.location = clean(mv.group(1)) if mv else ("" if "Schiedsrichter" in text else text)
+                vv = re.search(r"verlegt vom:?\s*(\d{1,2}\.\d{1,2}\.\d{2,4}(?:\s+\d{1,2}:\d{2})?)", text)
+                if vv:
+                    hinweis = f"verlegt vom {vv.group(1)}"
+                    last.status_note = f"{last.status_note} · {hinweis}" if last.status_note else hinweis
             continue
 
         # Spielzeile: zwei Vereinsnamen
@@ -362,22 +370,31 @@ def parse_matchplan(html: str, deob: "Deobfuscator | None" = None) -> list[Match
 
         score_cell = tr.select_one(".column-score")
         status_note = ""
+        day, tme, marker = cur_day, cur_time, False
         if score_cell:
             st = clean(score_cell.get_text(" "))
-            # Nur echte Wörter übernehmen (Ergebnisse sind verschleiert)
-            if re.search(r"[A-Za-zÄÖÜäöüß]{4,}", st):
+            info = score_cell.select_one(".info-text")
+            info_txt = clean(info.get_text(" ")) if info else ""
+            new_day = parse_date(info_txt)
+            if new_day:
+                # Verlegtes Spiel: fussball.de zeigt am ALTEN Termin einen Platzhalter
+                # mit dem NEUEN Datum. Wir übernehmen das neue Datum; der eigentliche
+                # Eintrag am neuen Termin (mit Spielort) ersetzt ihn später.
+                day, tme, marker = new_day, parse_time(info_txt), True
+            elif re.search(r"[A-Za-zÄÖÜäöüß]{4,}", st):
+                # Nur echte Wörter übernehmen (Ergebnisse sind verschleiert)
                 status_note = st
 
         kickoff = None
-        if cur_time:
-            kickoff = datetime(cur_day.year, cur_day.month, cur_day.day, *cur_time, tzinfo=BERLIN)
+        if tme:
+            kickoff = datetime(day.year, day.month, day.day, *tme, tzinfo=BERLIN)
 
-        uid_src = gid or f"{cur_day.isoformat()}|{home}|{away}|{cur_label}"
+        uid_src = gid or f"{day.isoformat()}|{home}|{away}|{cur_label}"
         uid = hashlib.sha1(uid_src.encode("utf-8")).hexdigest()[:24] + "@fussballde-kalender"
 
         last = Match(
-            uid=uid, day=cur_day, kickoff=kickoff, home=home, away=away,
-            label=cur_label, url=url, status_note=status_note,
+            uid=uid, day=day, kickoff=kickoff, home=home, away=away,
+            label=cur_label, url=url, status_note=status_note, marker=marker,
         )
         matches.append(last)
 
