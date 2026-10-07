@@ -278,6 +278,20 @@ def parse_date(text: str) -> date | None:
         return None
 
 
+RELATIVE_DAYS = {"vorgestern": -2, "gestern": -1, "heute": 0, "morgen": 1, "übermorgen": 2}
+
+
+def parse_relative_date(text: str) -> date | None:
+    """fussball.de schreibt bei nahen Spielen "Heute", "Morgen" o. Ä. statt des Datums."""
+    low = text.lower()
+    heute = datetime.now(BERLIN).date()
+    # längere Wörter zuerst prüfen ("übermorgen" enthält "morgen")
+    for wort, diff in sorted(RELATIVE_DAYS.items(), key=lambda kv: -len(kv[0])):
+        if re.search(rf"(?<![a-zäöüß]){wort}(?![a-zäöüß])", low):
+            return heute + timedelta(days=diff)
+    return None
+
+
 def parse_time(text: str) -> tuple[int, int] | None:
     m = TIME_RE.search(text)
     if not m:
@@ -315,10 +329,13 @@ def parse_matchplan(html: str, deob: "Deobfuscator | None" = None) -> list[Match
 
         # Kopfzeilen mit Datum / Uhrzeit / Mannschaft / Wettbewerb
         if "row-headline" in classes or "row-competition" in classes:
-            d = parse_date(text)
+            d = parse_date(text) or parse_relative_date(text)
             if d:
                 cur_day = d
                 cur_time = parse_time(text)
+            elif "row-headline" in classes:
+                # Kein Datum erkennbar: lieber auslassen als einem falschen Tag zuordnen
+                cur_day, cur_time = None, None
             lbl = label_from_row(tr)
             if lbl:
                 cur_label = lbl
