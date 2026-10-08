@@ -30,7 +30,7 @@ body {
   font-family: var(--body); font-size: clamp(14px, 1.05vw, 22px);
   font-variant-numeric: tabular-nums;
 }
-.board { box-sizing: border-box; min-height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+.board { box-sizing: border-box; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
 .pad { padding-inline: clamp(16px, 2vw, 40px); }
 
 /* Kopfleiste: weiß, damit das Wappen auf seinem gewohnten Grund steht */
@@ -65,7 +65,13 @@ body {
   display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: clamp(14px, 1.6vw, 32px);
   min-height: 0; padding-block: clamp(12px, 1.1vw, 22px);
 }
-.col { min-width: 0; display: flex; flex-direction: column; gap: .6em; }
+.col { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: .6em; }
+.viewport { flex: 1; min-height: 0; overflow: hidden; }
+.viewport .list { position: relative; transition: opacity .4s ease; }
+.viewport .list.fade { opacity: 0; }
+.pages { margin-left: auto; display: flex; gap: .35em; align-items: center; }
+.pages i { width: .5em; height: .5em; border-radius: 50%; background: var(--line); }
+.pages i.on { background: var(--white); }
 .col h2 {
   margin: 0; display: flex; align-items: baseline; gap: .6em; flex-wrap: wrap;
   font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
@@ -149,13 +155,16 @@ body {
 :fullscreen .ctl { display: none; }
 
 @media (max-width: 900px) {
+  .board { height: auto; min-height: 100%; }
+  .viewport { overflow: visible; }
+  .pages { display: none; }
   .main { grid-template-columns: minmax(0, 1fr); }
   .game { grid-template-columns: 4em minmax(0, 1fr); }
   .game .state { grid-column: 2; justify-self: start; text-align: left; font-size: .95em; }
   .game .t { font-size: 1.6em; }
   .game .match { font-size: 1.25em; }
 }
-@media (prefers-reduced-motion: reduce) { .state.live::before { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .state.live::before { animation: none; } .viewport .list { transition: none; } }
 </style>
 </head>
 <body>
@@ -188,8 +197,8 @@ body {
       <div class="list" id="today"></div>
     </section>
     <aside class="col side">
-      <h2><span class="when" id="nextLabel">Demnächst</span><span class="count" id="nextCount"></span></h2>
-      <div class="list" id="next"></div>
+      <h2><span class="when">Nächste 7 Tage</span><span class="pages" id="nextPages" aria-hidden="true"></span></h2>
+      <div class="viewport" id="nextWrap"><div class="list" id="next"></div></div>
     </aside>
   </main>
 
@@ -294,23 +303,19 @@ function zeichnen() {
       '</div>';
   }
 
-  // rechte Spalte: die nächsten Spieltage, bis etwa 9 Spiele angezeigt sind
-  const kuenftig = sortiert.filter(s => s.d > heute);
+  // rechte Spalte: alle Spiele der nächsten 7 Tage, nach Tagen gruppiert
+  const bis = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7));
   const tage = [];
-  let anzahl = 0;
-  for (const s of kuenftig) {
+  for (const s of sortiert.filter(s => s.d > heute && s.d <= bis)) {
     let tag = tage[tage.length - 1];
-    if (!tag || tag.d !== s.d) {
-      if (anzahl >= 9 || tage.length >= 3) break;
-      tag = { d: s.d, spiele: [] }; tage.push(tag);
-    }
-    tag.spiele.push(s); anzahl++;
+    if (!tag || tag.d !== s.d) { tag = { d: s.d, spiele: [] }; tage.push(tag); }
+    tag.spiele.push(s);
   }
-  document.getElementById("nextLabel").textContent = tage.length && tage[0].d === morgen ? "Morgen" : "Demnächst";
-  document.getElementById("nextCount").textContent = "";
   document.getElementById("next").innerHTML = tage.map(t =>
-    '<h3>' + esc(langDatum(datum(t.d))) + '</h3>' + t.spiele.map(s => zeile(s, now, false)).join("")
-  ).join("") || '<div class="empty"><span>Keine weiteren Spiele angesetzt.</span></div>';
+    '<h3>' + (t.d === morgen ? "Morgen · " : "") + esc(langDatum(datum(t.d))) + '</h3>' +
+    t.spiele.map(s => zeile(s, now, false)).join("")
+  ).join("") || (geladen ? '<div class="empty"><span>In den nächsten 7 Tagen sind keine Spiele angesetzt.</span></div>' : "");
+  seitenBauen();
 
   const standEl = document.getElementById("stand");
   if (STAND) {
@@ -343,6 +348,42 @@ document.getElementById("btnFull").addEventListener("click", async () => {
 async function wachHalten() { try { await navigator.wakeLock?.request("screen"); } catch (e) {} }
 document.addEventListener("visibilitychange", () => { if (!document.hidden) wachHalten(); });
 wachHalten();
+
+// Passt die Liste der nächsten 7 Tage nicht auf den Bildschirm, wird sie in Seiten
+// aufgeteilt, die alle 12 Sekunden wechseln. Ein Tag wird dabei nicht mitten in der Überschrift getrennt.
+let seiten = [0], seite = 0;
+function seitenBauen() {
+  const vp = document.getElementById("nextWrap"), list = document.getElementById("next");
+  const kinder = Array.from(list.children);
+  seiten = [0];
+  if (getComputedStyle(vp).overflowY === "hidden") {
+    const H = vp.clientHeight;
+    let start = 0;
+    kinder.forEach((el, i) => {
+      if (el.offsetTop + el.offsetHeight - start > H && el.offsetTop > start) {
+        const vorher = kinder[i - 1];
+        start = (vorher && vorher.tagName === "H3" && vorher.offsetTop > start) ? vorher.offsetTop : el.offsetTop;
+        seiten.push(start);
+      }
+    });
+  }
+  if (seite >= seiten.length) seite = 0;
+  seiteZeigen();
+}
+function seiteZeigen() {
+  const vp = document.getElementById("nextWrap"), list = document.getElementById("next");
+  const oben = seiten[seite], unten = seiten[seite + 1] ?? Infinity;
+  list.style.transform = seiten.length > 1 ? "translateY(" + (-oben) + "px)" : "";
+  for (const el of list.children) el.style.visibility = (el.offsetTop >= oben && el.offsetTop < unten) ? "" : "hidden";
+  document.getElementById("nextPages").innerHTML = seiten.length > 1 ? seiten.map((_, i) => '<i class="' + (i === seite ? "on" : "") + '"></i>').join("") : "";
+}
+setInterval(() => {
+  if (seiten.length < 2) return;
+  const list = document.getElementById("next");
+  list.classList.add("fade");
+  setTimeout(() => { seite = (seite + 1) % seiten.length; seiteZeigen(); list.classList.remove("fade"); }, 400);
+}, 12000);
+window.addEventListener("resize", seitenBauen);
 
 // Vereinslogo: logo.png liegt neben dieser Seite. Fehlt es, bleibt das Platzhalter-Wappen sichtbar.
 function zeigeLogo(src) {
