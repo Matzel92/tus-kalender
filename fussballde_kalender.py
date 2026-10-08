@@ -487,6 +487,28 @@ def write_if_changed(path: Path, content: str) -> bool:
 # Ablauf
 # --------------------------------------------------------------------------
 
+def write_json(matches: list[Match], path: Path) -> None:
+    """Spieldaten für die Anzeigeseite (anzeige.html) schreiben."""
+    import json
+    spiele = []
+    for m in matches:
+        teile = [t.strip() for t in m.label.split("|")]
+        spiele.append({
+            "d": m.day.isoformat(),
+            "t": m.kickoff.strftime("%H:%M") if m.kickoff else "",
+            "team": teile[0] if teile else "",
+            "comp": " · ".join(teile[1:]),
+            "h": m.home, "a": m.away,
+            "ort": m.location.replace(" | ", ", "),
+            "note": m.status_note if not m.cancelled else "",
+            "x": m.cancelled,
+        })
+    daten = {"stand": datetime.now(BERLIN).isoformat(timespec="seconds"), "spiele": spiele}
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(daten, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    os.replace(tmp, path)
+
+
 def run_once(args) -> int:
     today = date.today()
     von = today - timedelta(days=args.days_back)
@@ -512,6 +534,8 @@ def run_once(args) -> int:
 
     ics = build_ics(matches, args.name, args.duration, datetime.now(timezone.utc))
     changed = write_if_changed(Path(args.out), ics)
+    if args.json:
+        write_json(matches, Path(args.json))
     print(f"[{datetime.now():%H:%M:%S}] {len(matches)} Spiele, "
           f"{'Datei aktualisiert' if changed else 'keine Änderung'}: {args.out}")
     return 0
@@ -530,6 +554,7 @@ def main() -> int:
     p.add_argument("--interval", type=int, default=0,
                    help="Sekunden zwischen zwei Abrufen; 0 = nur einmal ausführen (Minimum 60)")
     p.add_argument("--debug-html", help="Rohes HTML zusätzlich in diese Datei speichern")
+    p.add_argument("--json", help="Spieldaten zusätzlich für die Anzeigeseite in diese Datei schreiben (z. B. spiele.json)")
     args = p.parse_args()
 
     if not args.club_id:

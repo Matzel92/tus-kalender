@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TuS Harpen 08/11 – Spiele</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: Anzeigetafel im Querformat – weiße Kopfleiste mit Vereinswappen, darunter vereinsblaue Tafel:
+   links "Heute" groß, rechts die nächsten Spieltage, unten Statuszeile.
+   Bewusst ein festes Erscheinungsbild in den Vereinsfarben Blau und Weiß (Fernseher im Vereinsheim). */
+:root {
+  --blue: #0B3D91;        /* Vereinsblau */
+  --blue-deep: #082D6E;   /* Tafelgrund */
+  --blue-row: #0F4AA6;    /* abgesetzte Flächen */
+  --line: #2A5AAE;
+  --white: #FFFFFF;
+  --muted: #BCD0EF;
+  --dim: #7E9CCB;
+  --live: #5BE39A;
+  --bad: #FF8F86;
+  --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body: "Barlow", "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--blue-deep); color: var(--white);
+  font-family: var(--body); font-size: clamp(14px, 1.05vw, 22px);
+  font-variant-numeric: tabular-nums;
+}
+.board { box-sizing: border-box; min-height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+.pad { padding-inline: clamp(16px, 2vw, 40px); }
+
+/* Kopfleiste: weiß, damit das Wappen auf seinem gewohnten Grund steht */
+.top {
+  background: var(--white); color: var(--blue);
+  display: flex; align-items: center; gap: clamp(14px, 1.6vw, 32px); flex-wrap: wrap;
+  padding-block: clamp(10px, 1.1vw, 22px);
+  border-bottom: clamp(5px, .45vw, 9px) solid var(--blue);
+}
+.logo {
+  flex: none; width: clamp(64px, 6.4vw, 128px); height: clamp(64px, 6.4vw, 128px);
+  display: grid; place-items: center; position: relative;
+}
+.logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.logo svg { width: 100%; height: 100%; }
+.logo button {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; border: 0; background: none;
+}
+.logo button:focus-visible { opacity: 1; outline: 3px solid var(--blue); outline-offset: 3px; background: transparent; }
+.club { min-width: 0; flex: 1; }
+.club h1 {
+  margin: 0; font-family: var(--display); font-weight: 700;
+  font-size: clamp(28px, 3vw, 64px); line-height: 1; letter-spacing: .01em; text-wrap: balance;
+}
+.club p { margin: .3em 0 0; color: var(--blue-row); font-weight: 600; font-size: 1.05em; letter-spacing: .1em; text-transform: uppercase; }
+.clock { text-align: right; }
+.clock .time { font-family: var(--display); font-weight: 700; font-size: clamp(42px, 4.8vw, 100px); line-height: .9; color: var(--blue); }
+.clock .date { color: var(--blue-row); font-weight: 500; font-size: 1.05em; margin-top: .2em; }
+
+/* Hauptbereich */
+.main {
+  display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: clamp(14px, 1.6vw, 32px);
+  min-height: 0; padding-block: clamp(12px, 1.1vw, 22px);
+}
+.col { min-width: 0; display: flex; flex-direction: column; gap: .6em; }
+.col h2 {
+  margin: 0; display: flex; align-items: baseline; gap: .6em; flex-wrap: wrap;
+  font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+  font-size: clamp(18px, 1.7vw, 36px); padding-bottom: .35em; border-bottom: 3px solid var(--white);
+}
+.col h2 .when { background: var(--white); color: var(--blue); padding: 0 .35em; }
+.col h2 .count { margin-left: auto; color: var(--muted); font-family: var(--body); font-weight: 500; font-size: .55em; letter-spacing: .08em; }
+
+.list { display: flex; flex-direction: column; }
+.game {
+  display: grid; grid-template-columns: 5.2em minmax(0, 1fr) auto; column-gap: 1em; align-items: center;
+  padding: .45em .7em; border-bottom: 1px solid var(--line);
+}
+.game .t { font-family: var(--display); font-weight: 700; font-size: 2.15em; line-height: 1; color: var(--white); }
+.game .who { min-width: 0; }
+.game .meta { display: flex; gap: .7em; align-items: baseline; color: var(--muted); font-size: .92em; letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.game .team { color: var(--white); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.game .match { font-family: var(--display); font-weight: 500; font-size: 1.6em; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.game .match .own { font-weight: 700; color: var(--white); }
+.game .match .opp { color: var(--muted); }
+.game .match .vs { color: var(--dim); padding: 0 .3em; }
+.game .where { color: var(--muted); font-size: .92em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tag { display: inline-block; font-size: .78em; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: .1em .45em; border-radius: 3px; margin-right: .4em; }
+.tag.h { background: var(--blue); color: var(--white); }
+.tag.a { border: 1px solid var(--dim); color: var(--muted); }
+
+/* Heimspiele: weiße Zeile mit blauer Schrift */
+.game.home { background: var(--white); border-bottom-color: var(--blue-deep); }
+.game.home .t, .game.home .team, .game.home .match .own { color: var(--blue); }
+.game.home .match .opp, .game.home .meta, .game.home .where { color: var(--blue-row); }
+.game.home .match .vs { color: var(--dim); }
+
+.state { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.1em; white-space: nowrap; text-align: right; color: var(--muted); }
+.state.live { color: var(--live); }
+.state.live::before { content: ""; display: inline-block; width: .55em; height: .55em; border-radius: 50%; background: var(--live); margin-right: .4em; vertical-align: .08em; animation: pulse 1.6s ease-in-out infinite; }
+.state.soon { color: var(--white); background: var(--blue-row); padding: .1em .5em; border-radius: 3px; }
+.state.off { color: var(--bad); }
+.game.home .state.live { color: #0E8A4C; }
+.game.home .state.live::before { background: #0E8A4C; }
+.game.home .state.soon { background: var(--blue); }
+@keyframes pulse { 50% { opacity: .25; } }
+
+/* beendete Spiele: kompakt und gedimmt */
+.game.done { padding-block: .3em; background: none; }
+.game.done .t { font-size: 1.3em; color: var(--dim); }
+.game.done .match { font-size: 1.1em; }
+.game.done .match .own, .game.done .match .opp { color: var(--dim); }
+.game.done .meta, .game.done .where { display: none; }
+.game.cancelled .match, .game.cancelled .t { text-decoration: line-through; }
+.note { color: var(--white); font-weight: 600; }
+.game.home .note { color: var(--blue); }
+
+/* rechte Spalte: kleiner */
+.side .game { grid-template-columns: 3.6em minmax(0, 1fr); padding: .45em .5em; }
+.side .game .t { font-size: 1.5em; }
+.side .game .match { font-size: 1.2em; }
+.side .game .where { display: none; }
+.side .state { display: none; }
+.side h3 { margin: .9em 0 .2em; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-size: 1.15em; }
+
+.empty { padding: 1.4em .7em; border-bottom: 1px solid var(--line); }
+.empty strong { display: block; font-family: var(--display); font-size: 2em; font-weight: 600; text-transform: uppercase; }
+.empty span { color: var(--muted); font-size: 1.1em; }
+.empty .next { margin-top: .9em; color: var(--white); font-size: 1.25em; }
+.empty .next b { font-family: var(--display); font-weight: 700; }
+
+/* Statuszeile */
+.foot {
+  display: flex; gap: 1em; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: .9em;
+  background: var(--blue); padding-block: .55em;
+}
+.foot .spacer { flex: 1; }
+.ctl { display: flex; gap: .4em; flex-wrap: wrap; }
+.ctl button {
+  font: inherit; font-size: .95em; color: var(--white); background: transparent; border: 1px solid var(--line);
+  padding: .3em .8em; border-radius: 4px; cursor: pointer;
+}
+.ctl button[aria-pressed="true"] { color: var(--blue); background: var(--white); border-color: var(--white); }
+.ctl button:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
+.stale { color: var(--white); background: #B3261E; padding: .1em .6em; border-radius: 3px; font-weight: 600; }
+:fullscreen .ctl { display: none; }
+
+@media (max-width: 900px) {
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .game { grid-template-columns: 4em minmax(0, 1fr); }
+  .game .state { grid-column: 2; justify-self: start; text-align: left; font-size: .95em; }
+  .game .t { font-size: 1.6em; }
+  .game .match { font-size: 1.25em; }
+}
+@media (prefers-reduced-motion: reduce) { .state.live::before { animation: none; } }
+</style>
+</head>
+<body>
+<div class="board">
+  <header class="top pad">
+    <div class="logo" id="logoBox">
+      <!-- Platzhalter, bis das echte Vereinslogo (logo.png) eingebunden ist -->
+      <svg id="logoPlaceholder" viewBox="0 0 80 96" aria-hidden="true">
+        <path d="M4 4h72v44c0 22-16 36-36 44C20 84 4 70 4 48z" fill="var(--blue)" stroke="var(--blue)" stroke-width="3"/>
+        <path d="M10 10h60v38c0 18-13 30-30 37C23 78 10 66 10 48z" fill="none" stroke="var(--white)" stroke-width="2.5"/>
+        <text x="40" y="38" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="20" fill="var(--white)">TuS</text>
+        <text x="40" y="68" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="17" fill="var(--white)" textLength="50" lengthAdjust="spacingAndGlyphs">Harpen</text>
+      </svg>
+      <img id="logoImg" alt="Vereinslogo TuS Harpen 08/11" hidden>
+    </div>
+    <div class="club">
+      <h1>TuS Harpen 08/11</h1>
+      <p>Spielplan aller Mannschaften</p>
+    </div>
+    <div class="clock">
+      <div class="time" id="time">--:--</div>
+      <div class="date" id="date"></div>
+    </div>
+  </header>
+
+
+  <main class="main pad">
+    <section class="col">
+      <h2><span class="when" id="todayLabel">Heute</span><span id="todayDate"></span><span class="count" id="todayCount"></span></h2>
+      <div class="list" id="today"></div>
+    </section>
+    <aside class="col side">
+      <h2><span class="when" id="nextLabel">Demnächst</span><span class="count" id="nextCount"></span></h2>
+      <div class="list" id="next"></div>
+    </aside>
+  </main>
+
+  <footer class="foot pad">
+    <span id="stand">Spielplan wird geladen …</span>
+    <span>Daten: fussball.de · aktualisiert sich automatisch</span>
+    <span class="spacer"></span>
+    <div class="ctl"><button type="button" id="btnFull">Vollbild</button></div>
+  </footer>
+</div>
+
+<script>
+// Die Spieldaten kommen aus spiele.json, die der GitHub-Workflow alle 15 Minuten neben diese Seite lädt.
+let SPIELE = [];
+let STAND = null;          // Zeitpunkt des letzten erfolgreichen Abrufs bei fussball.de
+let geladen = false;
+
+const VEREIN = "harpen";             // Teil des Vereinsnamens zum Erkennen eigener Teams
+const SPIELDAUER_MIN = 105;          // so lange gilt ein Spiel als "läuft"
+const VERALTET_STD = 3;              // Hinweis, wenn die Daten älter sind
+const NEULADEN_UM = 4;               // Seite nachts um 4 Uhr neu laden (übernimmt Änderungen an der Seite)
+
+const TAGE = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+const MONATE = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+
+const SEITE_GELADEN = Date.now();
+
+function jetzt() { return new Date(); }
+function iso(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function datum(isoStr) { const [y, m, d] = isoStr.split("-").map(Number); return new Date(y, m - 1, d); }
+function langDatum(d) { return TAGE[d.getDay()] + ", " + d.getDate() + ". " + MONATE[d.getMonth()]; }
+function anstoss(s) { if (!s.t) return null; const [h, m] = s.t.split(":").map(Number); const d = datum(s.d); d.setHours(h, m, 0, 0); return d; }
+function eigen(name) { return name.toLowerCase().includes(VEREIN); }
+function wettbewerb(c) { return /freundschaft/i.test(c) ? "Freundschaftsspiel" : c; }
+function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+
+function zustand(s, now) {
+  if (s.x) return { cls: "off", text: "Abgesetzt", done: false };
+  const k = anstoss(s);
+  if (!k) return { cls: "", text: "Zeit offen", done: false };
+  const diff = (now - k) / 60000;
+  if (diff < 0) {
+    const min = Math.ceil(-diff);
+    if (min <= 90) return { cls: "soon", text: "in " + min + " Min", done: false };
+    return { cls: "", text: "", done: false };
+  }
+  if (diff < SPIELDAUER_MIN) return { cls: "live", text: "Läuft", done: false };
+  return { cls: "", text: "Beendet", done: true };
+}
+
+function zeile(s, now, mitStatus) {
+  const z = zustand(s, now);
+  const heim = eigen(s.h);
+  const paarung =
+    '<span class="' + (eigen(s.h) ? "own" : "opp") + '">' + esc(s.h) + '</span>' +
+    '<span class="vs">–</span>' +
+    '<span class="' + (eigen(s.a) ? "own" : "opp") + '">' + esc(s.a) + '</span>';
+  const cls = ["game", heim && !z.done ? "home" : "", mitStatus && z.done ? "done" : "", s.x ? "cancelled" : ""].join(" ");
+  const notiz = s.note ? ' · <span class="note">' + esc(s.note) + '</span>' : "";
+  return '<div class="' + cls + '">' +
+    '<div class="t">' + esc(s.t || "–") + '</div>' +
+    '<div class="who">' +
+      '<div class="meta"><span class="team">' + esc(s.team) + '</span><span>' + esc(wettbewerb(s.comp)) + notiz + '</span></div>' +
+      '<div class="match">' + paarung + '</div>' +
+      '<div class="where"><span class="tag ' + (heim ? "h" : "a") + '">' + (heim ? "Heim" : "Auswärts") + '</span>' + esc(s.ort || "Spielort noch offen") + '</div>' +
+    '</div>' +
+    (mitStatus ? '<div class="state ' + z.cls + '">' + esc(z.text) + '</div>' : "") +
+  '</div>';
+}
+
+function zeichnen() {
+  const now = jetzt();
+  const heute = iso(now);
+  const morgen = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+
+  document.getElementById("time").textContent = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+  document.getElementById("date").textContent = langDatum(now) + " " + now.getFullYear();
+
+  const sortiert = SPIELE.slice().sort((a, b) => (a.d + (a.t || "99")).localeCompare(b.d + (b.t || "99")));
+  const heuteSpiele = sortiert.filter(s => s.d === heute);
+
+  // laufende und kommende Spiele oben, beendete darunter
+  const offen = heuteSpiele.filter(s => !zustand(s, now).done);
+  const fertig = heuteSpiele.filter(s => zustand(s, now).done);
+
+  document.getElementById("todayDate").textContent = langDatum(now);
+  document.getElementById("todayCount").textContent = heuteSpiele.length ? heuteSpiele.length + (heuteSpiele.length === 1 ? " Spiel" : " Spiele") : "";
+
+  const heuteEl = document.getElementById("today");
+  if (!geladen) {
+    heuteEl.innerHTML = '<div class="empty"><strong>Spielplan wird geladen</strong><span>Einen Moment bitte …</span></div>';
+  } else if (heuteSpiele.length) {
+    heuteEl.innerHTML = offen.concat(fertig).map(s => zeile(s, now, true)).join("");
+  } else {
+    const naechstes = sortiert.find(s => s.d > heute && !s.x);
+    heuteEl.innerHTML = '<div class="empty"><strong>Heute keine Spiele</strong>' +
+      '<span>Alle Mannschaften haben spielfrei.</span>' +
+      (naechstes ? '<div class="next">Nächstes Spiel: <b>' + esc(langDatum(datum(naechstes.d))) + ', ' + esc(naechstes.t || "") + ' Uhr</b><br>' +
+        esc(naechstes.team) + ': ' + esc(naechstes.h) + ' – ' + esc(naechstes.a) + '</div>' : "") +
+      '</div>';
+  }
+
+  // rechte Spalte: die nächsten Spieltage, bis etwa 9 Spiele angezeigt sind
+  const kuenftig = sortiert.filter(s => s.d > heute);
+  const tage = [];
+  let anzahl = 0;
+  for (const s of kuenftig) {
+    let tag = tage[tage.length - 1];
+    if (!tag || tag.d !== s.d) {
+      if (anzahl >= 9 || tage.length >= 3) break;
+      tag = { d: s.d, spiele: [] }; tage.push(tag);
+    }
+    tag.spiele.push(s); anzahl++;
+  }
+  document.getElementById("nextLabel").textContent = tage.length && tage[0].d === morgen ? "Morgen" : "Demnächst";
+  document.getElementById("nextCount").textContent = "";
+  document.getElementById("next").innerHTML = tage.map(t =>
+    '<h3>' + esc(langDatum(datum(t.d))) + '</h3>' + t.spiele.map(s => zeile(s, now, false)).join("")
+  ).join("") || '<div class="empty"><span>Keine weiteren Spiele angesetzt.</span></div>';
+
+  const standEl = document.getElementById("stand");
+  if (STAND) {
+    const alt = (now - STAND) / 3600000 > VERALTET_STD;
+    const txt = (iso(STAND) === heute ? "" : STAND.getDate() + "." + (STAND.getMonth() + 1) + ". ") +
+      String(STAND.getHours()).padStart(2, "0") + ":" + String(STAND.getMinutes()).padStart(2, "0") + " Uhr";
+    standEl.textContent = alt ? "Achtung: Daten vom " + txt + " – Aktualisierung gestört" : "Stand " + txt;
+    standEl.className = alt ? "stale" : "";
+  }
+}
+
+async function nachladen() {
+  try {
+    const r = await fetch("spiele.json?" + Date.now(), { cache: "no-store" });
+    if (!r.ok) return;
+    const d = await r.json();
+    const liste = Array.isArray(d) ? d : d.spiele;
+    if (Array.isArray(liste) && liste.length) {
+      SPIELE = liste;
+      STAND = d.stand ? new Date(d.stand) : null;
+      geladen = true;
+      zeichnen();
+    }
+  } catch (e) { /* kurzzeitig offline: der letzte Stand bleibt stehen */ }
+}
+
+document.getElementById("btnFull").addEventListener("click", async () => {
+  try { await document.documentElement.requestFullscreen(); } catch (e) {}
+});
+async function wachHalten() { try { await navigator.wakeLock?.request("screen"); } catch (e) {} }
+document.addEventListener("visibilitychange", () => { if (!document.hidden) wachHalten(); });
+wachHalten();
+
+// Vereinslogo: logo.png liegt neben dieser Seite. Fehlt es, bleibt das Platzhalter-Wappen sichtbar.
+function zeigeLogo(src) {
+  const img = document.getElementById("logoImg");
+  img.onload = () => { img.hidden = false; document.getElementById("logoPlaceholder").hidden = true; };
+  img.src = src;
+}
+zeigeLogo("logo.png?" + new Date().toISOString().slice(0, 10));
+
+// Nachts einmal neu laden, damit Änderungen an der Seite selbst ankommen
+setInterval(() => {
+  const n = new Date();
+  if (n.getHours() === NEULADEN_UM && Date.now() - SEITE_GELADEN > 3600000) location.reload();
+}, 60000);
+
+zeichnen();
+nachladen();
+setInterval(zeichnen, 15000);
+setInterval(nachladen, 5 * 60 * 1000);
+</script>
+
+</body>
+</html>
