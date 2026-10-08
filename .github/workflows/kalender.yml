@@ -10,7 +10,7 @@ name: Spielplan auf IONOS aktualisieren
 
 on:
   schedule:
-    - cron: "7,22,37,52 * * * *"   # alle 15 Minuten (GitHub startet teils mit Verzögerung)
+    - cron: "*/15 * * * *"   # alle 15 Minuten (GitHub startet teils mit Verzögerung)
   workflow_dispatch:         # manuell startbar über den Reiter "Actions"
 
 concurrency:
@@ -36,7 +36,7 @@ jobs:
 
       - name: Kalender erzeugen
         run: |
-          python fussballde_kalender.py --out tus-harpen.ics
+          python fussballde_kalender.py --out tus-harpen.ics --json spiele.json
           ls -l tus-harpen.ics
 
       - name: PDF erzeugen (nächste 3 Monate)
@@ -50,6 +50,8 @@ jobs:
         run: |
           # Sorgt dafür, dass der Webserver die Datei als Kalender ausliefert
           printf 'AddType "text/calendar; charset=utf-8" .ics\n' > .htaccess
+          # Logo nur hochladen, wenn es im Repository liegt
+          LOGO=""; [ -f logo.png ] && LOGO="put logo.png;"
           lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "
             set sftp:auto-confirm yes;
             set net:max-retries 2;
@@ -57,4 +59,7 @@ jobs:
             put tus-harpen.ics;
             put .htaccess;
             put spielplan.pdf;
+            put spiele.json;
+            put anzeige.html;
+            $LOGO
             bye"
