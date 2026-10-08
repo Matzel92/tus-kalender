@@ -10,7 +10,7 @@ name: Spielplan auf IONOS aktualisieren
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   # alle 15 Minuten (GitHub startet teils mit Verzögerung)
+    - cron: "7,22,37,52 * * * *"   # alle 15 Minuten (GitHub startet teils mit Verzögerung)
   workflow_dispatch:         # manuell startbar über den Reiter "Actions"
 
 concurrency:
