@@ -226,7 +226,7 @@ def build_pdf(spiele: list[Spiel], out: str, titel: str, von: date, bis: date, v
         canvas.restoreState()
 
     doc = SimpleDocTemplate(out, pagesize=landscape(A4), leftMargin=8 * mm, rightMargin=8 * mm,
-                            topMargin=10 * mm, bottomMargin=13 * mm, title=titel, author=verein)
+                            topMargin=10 * mm, bottomMargin=13 * mm, title=titel, author="TuS Harpen 08/11")
     titelblock = [
         Paragraph(escape(titel), s_titel),
         Spacer(1, 2),
@@ -269,7 +269,7 @@ def main() -> int:
     p.add_argument("ics", help="Kalenderdatei, z. B. tus-harpen.ics")
     p.add_argument("--out", default="spielplan.pdf", help="Ziel-PDF (Standard: spielplan.pdf)")
     p.add_argument("--months", type=int, default=3, help="Zeitraum in Monaten ab heute (Standard 3)")
-    p.add_argument("--titel", default="TuS Bochum-Harpen – Spielplan")
+    p.add_argument("--titel", default="TuS Harpen 08/11 – Spielplan")
     p.add_argument("--verein", default="Harpen", help="Namensteil zum Hervorheben der eigenen Teams")
     p.add_argument("--team", action="append", help="Nur bestimmte Mannschaften (mehrfach möglich)")
     p.add_argument("--logo", default="logo.png", help="Vereinslogo (PNG/JPG), Standard: logo.png")

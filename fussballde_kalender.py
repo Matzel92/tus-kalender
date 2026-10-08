@@ -522,7 +522,7 @@ def main() -> int:
     p.add_argument("--club-id", default=os.environ.get("FUSSBALLDE_CLUB_ID", "00ES8GN8N4000022VV0AG08LVUPGND5I"),
                    help="Vereins-ID von fussball.de (oder Umgebungsvariable FUSSBALLDE_CLUB_ID)")
     p.add_argument("--out", default="spielplan.ics", help="Zieldatei (Standard: spielplan.ics)")
-    p.add_argument("--name", default="TuS Bochum-Harpen – Spielplan", help="Kalendername")
+    p.add_argument("--name", default="TuS Harpen 08/11 – Spielplan", help="Kalendername")
     p.add_argument("--team", action="append", help="Nur Spiele, deren Mannschaft/Wettbewerb diesen Text enthält (mehrfach möglich)")
     p.add_argument("--days-back", type=int, default=30, help="Wie viele Tage zurück (Standard 30)")
     p.add_argument("--days-ahead", type=int, default=240, help="Wie viele Tage voraus (Standard 240)")
