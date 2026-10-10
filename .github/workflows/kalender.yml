@@ -50,6 +50,8 @@ jobs:
         run: |
           # Sorgt dafür, dass der Webserver die Datei als Kalender ausliefert
           printf 'AddType "text/calendar; charset=utf-8" .ics\n' > .htaccess
+          # Spieldaten dürfen auch von anderswo geladen werden (z. B. lokal geöffnete Anzeige, Einbindung in die Homepage)
+          printf '<IfModule mod_headers.c>\n<Files "spiele.json">\nHeader set Access-Control-Allow-Origin "*"\n</Files>\n</IfModule>\n' >> .htaccess
           # Logo nur hochladen, wenn es im Repository liegt
           LOGO=""; [ -f logo.png ] && LOGO="put logo.png;"
           lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "
