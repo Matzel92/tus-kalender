@@ -27,7 +27,7 @@
 html, body { height: 100%; }
 body {
   margin: 0; background: var(--blue-deep); color: var(--white);
-  font-family: var(--body); font-size: clamp(14px, 1.05vw, 22px);
+  font-family: var(--body); font-size: clamp(16px, 1.15vw, 24px);
   font-variant-numeric: tabular-nums;
 }
 .board { box-sizing: border-box; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
@@ -37,11 +37,11 @@ body {
 .top {
   background: var(--white); color: var(--blue);
   display: flex; align-items: center; gap: clamp(14px, 1.6vw, 32px); flex-wrap: wrap;
-  padding-block: clamp(10px, 1.1vw, 22px);
-  border-bottom: clamp(5px, .45vw, 9px) solid var(--blue);
+  padding-block: clamp(6px, .55vw, 12px);
+  border-bottom: clamp(4px, .35vw, 7px) solid var(--blue);
 }
 .logo {
-  flex: none; width: clamp(64px, 6.4vw, 128px); height: clamp(64px, 6.4vw, 128px);
+  flex: none; width: clamp(44px, 3.9vw, 80px); height: clamp(44px, 3.9vw, 80px);
   display: grid; place-items: center; position: relative;
 }
 .logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -53,17 +53,17 @@ body {
 .club { min-width: 0; flex: 1; }
 .club h1 {
   margin: 0; font-family: var(--display); font-weight: 700;
-  font-size: clamp(28px, 3vw, 64px); line-height: 1; letter-spacing: .01em; text-wrap: balance;
+  font-size: clamp(24px, 2.2vw, 46px); line-height: 1; letter-spacing: .01em; text-wrap: balance;
 }
-.club p { margin: .3em 0 0; color: var(--blue-row); font-weight: 600; font-size: 1.05em; letter-spacing: .1em; text-transform: uppercase; }
-.clock { text-align: right; }
-.clock .time { font-family: var(--display); font-weight: 700; font-size: clamp(42px, 4.8vw, 100px); line-height: .9; color: var(--blue); }
-.clock .date { color: var(--blue-row); font-weight: 500; font-size: 1.05em; margin-top: .2em; }
+.club p { margin: .15em 0 0; font-size: .8em !important; color: var(--blue-row); font-weight: 600; font-size: 1.05em; letter-spacing: .1em; text-transform: uppercase; }
+.clock { display: flex; align-items: baseline; justify-content: flex-end; gap: .6em; flex-wrap: wrap; text-align: right; }
+.clock .time { font-family: var(--display); font-weight: 700; font-size: clamp(32px, 3.1vw, 66px); line-height: 1; color: var(--blue); }
+.clock .date { order: -1; color: var(--blue-row); font-weight: 600; font-size: 1.2em; }
 
 /* Hauptbereich */
 .main {
   display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: clamp(14px, 1.6vw, 32px);
-  min-height: 0; padding-block: clamp(12px, 1.1vw, 22px);
+  min-height: 0; padding-block: clamp(8px, .7vw, 16px);
 }
 .col { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: .6em; }
 .viewport { flex: 1; min-height: 0; overflow: hidden; }
@@ -73,10 +73,12 @@ body {
 .pages { margin-left: auto; display: flex; gap: .35em; align-items: center; }
 .pages i { width: .5em; height: .5em; border-radius: 50%; background: var(--line); }
 .pages i.on { background: var(--white); }
+#todayPages { margin-left: .6em; }
+#todayPages:empty { display: none; }
 .col h2 {
   margin: 0; display: flex; align-items: baseline; gap: .6em; flex-wrap: wrap;
   font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
-  font-size: clamp(18px, 1.7vw, 36px); padding-bottom: .35em; border-bottom: 3px solid var(--white);
+  font-size: clamp(16px, 1.35vw, 30px); padding-bottom: .3em; border-bottom: 3px solid var(--white);
 }
 .col h2 .when { background: var(--white); color: var(--blue); padding: 0 .35em; }
 .col h2 .count { margin-left: auto; color: var(--muted); font-family: var(--body); font-weight: 500; font-size: .55em; letter-spacing: .08em; }
@@ -84,17 +86,17 @@ body {
 .list { display: flex; flex-direction: column; }
 .game {
   display: grid; grid-template-columns: 5.2em minmax(0, 1fr) auto; column-gap: 1em; align-items: center;
-  padding: .45em .7em; border-bottom: 1px solid var(--line);
+  padding: .4em .7em; border-bottom: 1px solid var(--line);
 }
 .game .t { font-family: var(--display); font-weight: 700; font-size: 2.15em; line-height: 1; color: var(--white); }
 .game .who { min-width: 0; }
-.game .meta { display: flex; gap: .7em; align-items: baseline; color: var(--muted); font-size: .92em; letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.game .meta { display: flex; gap: .7em; align-items: baseline; color: var(--muted); font-size: .8em; letter-spacing: .03em; flex-wrap: wrap; row-gap: 0; }
 .game .team { color: var(--white); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
-.game .match { font-family: var(--display); font-weight: 500; font-size: 1.6em; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.game .match { font-family: var(--display); font-weight: 500; font-size: 1.9em; line-height: 1.08; overflow-wrap: anywhere; }
 .game .match .own { font-weight: 700; color: var(--white); }
 .game .match .opp { color: var(--muted); }
 .game .match .vs { color: var(--dim); padding: 0 .3em; }
-.game .where { color: var(--muted); font-size: .92em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.game .where { color: var(--muted); font-size: .85em; margin-top: .1em; }
 .tag { display: inline-block; font-size: .78em; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: .1em .45em; border-radius: 3px; margin-right: .4em; }
 .tag.h { background: var(--blue); color: var(--white); }
 .tag.a { border: 1px solid var(--dim); color: var(--muted); }
@@ -105,7 +107,7 @@ body {
 .game.home .match .opp, .game.home .meta, .game.home .where { color: var(--blue-row); }
 .game.home .match .vs { color: var(--dim); }
 
-.state { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.1em; white-space: nowrap; text-align: right; color: var(--muted); }
+.state { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; white-space: nowrap; text-align: right; color: var(--muted); }
 .state.live { color: var(--live); }
 .state.live::before { content: ""; display: inline-block; width: .55em; height: .55em; border-radius: 50%; background: var(--live); margin-right: .4em; vertical-align: .08em; animation: pulse 1.6s ease-in-out infinite; }
 .state.soon { color: var(--white); background: var(--blue-row); padding: .1em .5em; border-radius: 3px; }
@@ -117,8 +119,8 @@ body {
 
 /* beendete Spiele: kompakt und gedimmt */
 .game.done { padding-block: .3em; background: none; }
-.game.done .t { font-size: 1.3em; color: var(--dim); }
-.game.done .match { font-size: 1.1em; }
+.game.done .t { font-size: 1.6em; color: var(--dim); }
+.game.done .match { font-size: 1.5em; }
 .game.done .match .own, .game.done .match .opp { color: var(--dim); }
 .game.done .where { display: none; }
 .game.done .meta { font-size: .8em; }
@@ -128,34 +130,34 @@ body {
 .game.home .note { color: var(--blue); }
 
 /* rechte Spalte: kleiner */
-.side .game { grid-template-columns: 3.6em minmax(0, 1fr); padding: .45em .5em; }
-.side .game .t { font-size: 1.5em; }
-.side .game .match { font-size: 1.2em; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.side .game { grid-template-columns: 3.9em minmax(0, 1fr); padding: .38em .5em; }
+.side .game .t { font-size: 1.65em; }
+.side .game .match { font-size: 1.5em; }
 .side .game .meta { white-space: normal; display: block; }
 .side .game .meta .team { margin-right: .6em; }
 .side .game .where { display: none; }
 .side .state { display: none; }
 /* Ergebnisse: Ergebnis-Feld statt Uhrzeit, Farbe aus Sicht des TuS */
-.side .game.res { grid-template-columns: 3.9em minmax(0, 1fr); }
+.side .game.res { grid-template-columns: 4.4em minmax(0, 1fr); }
 .score {
-  font-family: var(--display); font-weight: 700; font-size: 1.45em; line-height: 1; text-align: center;
+  font-family: var(--display); font-weight: 700; font-size: 1.75em; line-height: 1; text-align: center;
   padding: .18em 0; border-radius: 4px; background: var(--white); color: var(--blue);
 }
 .res.win .score { background: var(--live); color: var(--blue-deep); }
 .res.loss .score { background: var(--bad); color: var(--blue-deep); }
 .res.open .score, .res.cancelled .score { background: none; color: var(--dim); border: 1px solid var(--line); font-size: 1.15em; }
-.res .match { font-size: 1.15em; }
+.side .res .match { font-size: 1.45em; }
 .legend { display: flex; gap: 1em; color: var(--muted); font-size: .85em; margin-top: .7em; flex-wrap: wrap; }
 .legend i { display: inline-block; width: .8em; height: .8em; border-radius: 2px; margin-right: .35em; vertical-align: -.05em; }
 .sec { display: none; }
 /* Luftballons statt Ergebnis bei G- und F-Junioren */
 .balloons { display: inline-block; width: 1.9em; height: 1.35em; vertical-align: middle; }
 .state.kids { line-height: 0; }
-.state.kids .balloons { width: 2.6em; height: 1.85em; }
+.state.kids .balloons { width: 3em; height: 2.1em; }
 .res.kids .score { background: none; border: 1px solid var(--line); padding: .05em 0; line-height: 0; }
 [hidden] { display: none !important; }
-.game.done .state.fin { font-family: var(--display); font-weight: 700; font-size: 1.35em; color: var(--white); letter-spacing: .02em; }
-.side h3 { margin: .9em 0 .2em; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-size: 1.15em; }
+.game.done .state.fin { font-family: var(--display); font-weight: 700; font-size: 1.8em; color: var(--white); letter-spacing: .02em; }
+.side h3 { margin: .55em 0 .15em; font-size: 1em !important; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-size: 1.15em; }
 
 .empty { padding: 1.4em .7em; border-bottom: 1px solid var(--line); }
 .empty strong { display: block; font-family: var(--display); font-size: 2em; font-weight: 600; text-transform: uppercase; }
@@ -189,7 +191,7 @@ body {
   .game { grid-template-columns: 4em minmax(0, 1fr); }
   .game .state { grid-column: 2; justify-self: start; text-align: left; font-size: .95em; }
   .game .t { font-size: 1.6em; }
-  .game .match { font-size: 1.25em; }
+  .game .match { font-size: 1.45em; }
 }
 @media (prefers-reduced-motion: reduce) { .state.live::before { animation: none; } .viewport { transition: none; } }
 </style>
@@ -220,8 +222,8 @@ body {
 
   <main class="main pad">
     <section class="col">
-      <h2><span class="when" id="todayLabel">Heute</span><span id="todayDate"></span><span class="count" id="todayCount"></span></h2>
-      <div class="list" id="today"></div>
+      <h2><span class="when" id="todayLabel">Heute</span><span id="todayDate"></span><span class="count" id="todayCount"></span><span class="pages" id="todayPages" aria-hidden="true"></span></h2>
+      <div class="viewport" id="todayWrap"><div class="list" id="today"></div></div>
     </section>
     <aside class="col side">
       <h2><span class="when" id="sideLabel">Nächste 7 Tage</span><span class="pages" id="nextPages" aria-hidden="true"></span></h2>
@@ -409,7 +411,6 @@ function zeichnen() {
       t.spiele.map(ergebnisZeile).join("")).join("") +
     '<div class="legend"><span><i style="background:var(--live)"></i>Sieg</span><span><i style="background:var(--white)"></i>Unentschieden</span><span><i style="background:var(--bad)"></i>Niederlage</span></div>'
     : "";
-  seitenBauen();
 
   const standEl = document.getElementById("stand");
   if (STAND) {
@@ -419,6 +420,8 @@ function zeichnen() {
     standEl.textContent = alt ? "Achtung: Daten vom " + txt + " – Aktualisierung gestört" : "Stand " + txt;
     standEl.className = alt ? "stale" : "";
   }
+  // erst messen, wenn alles (auch Kopf- und Fußzeile) fertig gesetzt ist
+  requestAnimationFrame(() => { rechts.bauen(); links.bauen(); });
 }
 
 // Zuerst die Datei neben dieser Seite (Webspace), sonst die Online-Adresse –
@@ -458,65 +461,70 @@ async function wachHalten() { try { await navigator.wakeLock?.request("screen");
 document.addEventListener("visibilitychange", () => { if (!document.hidden) wachHalten(); });
 wachHalten();
 
-// Die rechte Spalte wechselt alle 12 Sekunden: zuerst die Ergebnisse der letzten Tage, dann die
-// nächsten 7 Tage. Passt eine Liste nicht auf den Bildschirm, wird sie in mehrere Seiten geteilt;
-// ein Tag wird dabei nicht direkt nach seiner Überschrift getrennt.
-let seiten = [], seite = 0;
+// Blättern: Passt eine Liste nicht auf den Bildschirm, wird sie in Seiten geteilt, die alle
+// 12 Sekunden wechseln. Rechts folgen die Ergebnisse und die nächsten 7 Tage aufeinander.
+// Ein Tag wird dabei nicht direkt nach seiner Überschrift getrennt.
+function Blaettern(vpId, listIds, dotsId, titel) {
+  const st = { seiten: [], seite: 0 };
+  const vp = () => document.getElementById(vpId);
+  const aktiv = () => getComputedStyle(vp()).overflowY === "hidden";
+  st.bauen = () => {
+    const alt = st.seiten[st.seite];
+    st.seiten = [];
+    for (const id of listIds) {
+      const list = document.getElementById(id);
+      list.hidden = false; list.style.transform = "";
+      for (const el of list.children) el.style.visibility = "";
+      if (!list.children.length) continue;
+      if (!aktiv()) { st.seiten.push({ list: id, oben: 0 }); continue; }
+      const H = vp().clientHeight, kinder = Array.from(list.children).filter(el => el.offsetHeight);
+      let start = 0;
+      st.seiten.push({ list: id, oben: 0 });
+      kinder.forEach((el, i) => {
+        if (el.offsetTop + el.offsetHeight - start > H && el.offsetTop > start) {
+          const vorher = kinder[i - 1];
+          start = (vorher && vorher.tagName === "H3" && vorher.offsetTop > start) ? vorher.offsetTop : el.offsetTop;
+          st.seiten.push({ list: id, oben: start });
+        }
+      });
+    }
+    if (!st.seiten.length) st.seiten = [{ list: listIds[listIds.length - 1], oben: 0 }];
+    const idx = alt ? st.seiten.findIndex(p => p.list === alt.list && p.oben === alt.oben) : -1;
+    st.seite = idx >= 0 ? idx : Math.min(st.seite, st.seiten.length - 1);
+    st.zeigen();
+  };
+  st.zeigen = () => {
+    if (!aktiv()) { document.getElementById(dotsId).innerHTML = ""; if (titel) titel(null); return; }
+    const p = st.seiten[st.seite];
+    for (const id of listIds) {
+      const list = document.getElementById(id), an = id === p.list;
+      list.hidden = !an;
+      if (!an) continue;
+      const folge = st.seiten[st.seite + 1], unten = folge && folge.list === id ? folge.oben : Infinity;
+      list.style.transform = p.oben ? "translateY(" + (-p.oben) + "px)" : "";
+      for (const el of list.children) el.style.visibility = (el.offsetTop >= p.oben && el.offsetTop < unten) ? "" : "hidden";
+    }
+    if (titel) titel(p.list);
+    document.getElementById(dotsId).innerHTML = st.seiten.length > 1 ? st.seiten.map((_, i) => '<i class="' + (i === st.seite ? "on" : "") + '"></i>').join("") : "";
+  };
+  st.weiter = () => {
+    if (st.seiten.length < 2) return;
+    vp().classList.add("fade");
+    setTimeout(() => { st.seite = (st.seite + 1) % st.seiten.length; st.zeigen(); vp().classList.remove("fade"); }, 400);
+  };
+  return st;
+}
 const TITEL = { results: "Ergebnisse", next: "Nächste 7 Tage" };
-function seitenBauen() {
-  const vp = document.getElementById("nextWrap");
-  const blaettern = getComputedStyle(vp).overflowY === "hidden";
-  const alt = seiten[seite];
-  seiten = [];
-  for (const id of ["results", "next"]) {
-    const list = document.getElementById(id);
-    list.hidden = false; list.style.transform = "";
-    for (const el of list.children) el.style.visibility = "";
-    if (!list.children.length) continue;
-    if (!blaettern) { seiten.push({ list: id, oben: 0 }); continue; }
-    // Kinder sind relativ zu ihrer Liste positioniert (position: relative)
-    const H = vp.clientHeight, kinder = Array.from(list.children).filter(el => el.offsetHeight);
-    let start = 0;
-    seiten.push({ list: id, oben: 0 });
-    kinder.forEach((el, i) => {
-      if (el.offsetTop + el.offsetHeight - start > H && el.offsetTop > start) {
-        const vorher = kinder[i - 1];
-        start = (vorher && vorher.tagName === "H3" && vorher.offsetTop > start) ? vorher.offsetTop : el.offsetTop;
-        seiten.push({ list: id, oben: start });
-      }
-    });
-  }
-  if (!seiten.length) seiten = [{ list: "next", oben: 0 }];
-  const idx = alt ? seiten.findIndex(p => p.list === alt.list && p.oben === alt.oben) : -1;
-  seite = idx >= 0 ? idx : Math.min(seite, seiten.length - 1);
-  seiteZeigen();
-}
-function seiteZeigen() {
-  const vp = document.getElementById("nextWrap");
-  if (getComputedStyle(vp).overflowY !== "hidden") {
-    document.getElementById("sideLabel").textContent = document.getElementById("results").children.length ? "Ergebnisse & Vorschau" : "Nächste 7 Tage";
-    document.getElementById("nextPages").innerHTML = "";
-    return;
-  }
-  const p = seiten[seite];
-  for (const id of ["results", "next"]) {
-    const list = document.getElementById(id), aktiv = id === p.list;
-    list.hidden = !aktiv;
-    if (!aktiv) continue;
-    const folge = seiten[seite + 1], unten = folge && folge.list === id ? folge.oben : Infinity;
-    list.style.transform = p.oben ? "translateY(" + (-p.oben) + "px)" : "";
-    for (const el of list.children) el.style.visibility = (el.offsetTop >= p.oben && el.offsetTop < unten) ? "" : "hidden";
-  }
-  document.getElementById("sideLabel").textContent = TITEL[p.list];
-  document.getElementById("nextPages").innerHTML = seiten.length > 1 ? seiten.map((_, i) => '<i class="' + (i === seite ? "on" : "") + '"></i>').join("") : "";
-}
-setInterval(() => {
-  if (seiten.length < 2) return;
-  const vp = document.getElementById("nextWrap");
-  vp.classList.add("fade");
-  setTimeout(() => { seite = (seite + 1) % seiten.length; seiteZeigen(); vp.classList.remove("fade"); }, 400);
-}, 12000);
-window.addEventListener("resize", seitenBauen);
+const rechts = Blaettern("nextWrap", ["results", "next"], "nextPages", id => {
+  document.getElementById("sideLabel").textContent = id ? TITEL[id]
+    : (document.getElementById("results").children.length ? "Ergebnisse & Vorschau" : "Nächste 7 Tage");
+});
+const links = Blaettern("todayWrap", ["today"], "todayPages", null);
+setInterval(() => { rechts.weiter(); links.weiter(); }, 12000);
+// Nach dem Laden der Schriften und Bilder neu aufteilen (Zeilenhöhen ändern sich dadurch)
+document.fonts?.ready.then(() => zeichnen());
+window.addEventListener("load", () => zeichnen());
+window.addEventListener("resize", () => { rechts.bauen(); links.bauen(); });
 
 // Vereinslogo: logo.png liegt neben dieser Seite. Fehlt es, bleibt das Platzhalter-Wappen sichtbar.
 function zeigeLogo(src) {
