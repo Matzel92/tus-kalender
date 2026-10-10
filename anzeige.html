@@ -156,6 +156,7 @@ body {
 .state.kids .balloons { width: 3em; height: 2.1em; }
 .res.kids .score { background: none; border: 1px solid var(--line); padding: .05em 0; line-height: 0; }
 [hidden] { display: none !important; }
+.state .folgt { display: block; font-family: var(--body); font-weight: 500; font-size: .55em; letter-spacing: .04em; text-transform: none; color: var(--dim); margin-top: .15em; }
 .game.done .state.fin { font-family: var(--display); font-weight: 700; font-size: 1.8em; color: var(--white); letter-spacing: .02em; }
 .side h3 { margin: .55em 0 .15em; font-size: 1em !important; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-size: 1.15em; }
 
@@ -297,7 +298,8 @@ function zeile(s, now, mitStatus) {
       '<div class="where"><span class="tag ' + (heim ? "h" : "a") + '">' + (heim ? "Heim" : "Auswärts") + '</span>' + esc(s.ort || "Spielort noch offen") + '</div>' +
     '</div>' +
     (mitStatus ? (z.done && kinder(s) && !s.x ? '<div class="state kids">' + BALLONS + '</div>' : z.done && s.e ? '<div class="state fin">' + esc(s.e.replace(":", " : ") + (s.z ? " " + s.z : "")) + '</div>'
-                                 : '<div class="state ' + z.cls + '">' + esc(z.text) + '</div>') : "") +
+                                 : '<div class="state ' + z.cls + '">' + esc(z.text) +
+                                   (z.done && !s.x && !s.oe ? '<small class="folgt">Ergebnis folgt</small>' : "") + '</div>') : "") +
   '</div>';
 }
 
