@@ -75,6 +75,9 @@ class Match:
     url: str = ""
     status_note: str = ""
     marker: bool = False  # Platzhalter am alten Termin eines verlegten Spiels
+    score: str = ""       # Ergebnis, z. B. "2:1" (leer, solange keins eingetragen ist)
+    no_result: bool = False  # "o.E." – Staffel ohne Ergebnisanzeige (z. B. Kinderfußball)
+    score_extra: str = ""    # "n.V." oder "n.E." (nach Verlängerung / Elfmeterschießen)
 
     @property
     def cancelled(self) -> bool:
@@ -317,6 +320,27 @@ def label_from_row(tr) -> str:
     return " | ".join(p for p in parts[1:] if p)
 
 
+def parse_score(cell) -> tuple[str, bool]:
+    """Ergebnis aus der (bereits entschlüsselten) Ergebnis-Zelle lesen."""
+    if cell is None:
+        return "", False
+    info = cell.select_one(".info-text")
+    if info and clean(info.get_text(" ")).lower().replace(" ", "") == "o.e.":
+        return "", True
+    special = cell.select_one(".score-special")
+    if special:
+        # z. B. "3 : 0 V 2 : 1" – das erste Paar ist das Wertungsergebnis
+        zahlen = re.findall(r"\d+", special.get_text(" "))
+        return (f"{zahlen[0]}:{zahlen[1]}" if len(zahlen) >= 2 else ""), False
+    left, right = cell.select_one(".score-left"), cell.select_one(".score-right")
+    if left and right:
+        l = re.match(r"\s*(\d+)", left.get_text(" "))
+        r = re.match(r"\s*(\d+)", right.get_text(" "))
+        if l and r:
+            return f"{l.group(1)}:{r.group(1)}", False
+    return "", False
+
+
 def parse_matchplan(html: str, deob: "Deobfuscator | None" = None) -> list[Match]:
     soup = BeautifulSoup(html, "html.parser")
     if deob is not None:
@@ -392,9 +416,19 @@ def parse_matchplan(html: str, deob: "Deobfuscator | None" = None) -> list[Match
         uid_src = gid or f"{day.isoformat()}|{home}|{away}|{cur_label}"
         uid = hashlib.sha1(uid_src.encode("utf-8")).hexdigest()[:24] + "@fussballde-kalender"
 
+        score, no_result = parse_score(score_cell)
+        score_extra = ""
+        if score_cell is not None and score:
+            zusatz = clean(score_cell.get_text(" ")).replace(".", "").replace(" ", "")
+            if re.search(r"nE", zusatz):
+                score_extra = "n.E."
+            elif re.search(r"nV", zusatz):
+                score_extra = "n.V."
+
         last = Match(
             uid=uid, day=day, kickoff=kickoff, home=home, away=away,
             label=cur_label, url=url, status_note=status_note, marker=marker,
+            score=score, no_result=no_result, score_extra=score_extra,
         )
         matches.append(last)
 
@@ -502,6 +536,9 @@ def write_json(matches: list[Match], path: Path) -> None:
             "ort": m.location.replace(" | ", ", "),
             "note": m.status_note if not m.cancelled else "",
             "x": m.cancelled,
+            "e": m.score,
+            "oe": m.no_result,
+            "z": m.score_extra,
         })
     daten = {"stand": datetime.now(BERLIN).isoformat(timespec="seconds"), "spiele": spiele}
     tmp = path.with_suffix(path.suffix + ".tmp")
