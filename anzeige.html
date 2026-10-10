@@ -62,7 +62,7 @@ body {
 
 /* Hauptbereich */
 .main {
-  display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: clamp(14px, 1.6vw, 32px);
+  display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: clamp(14px, 1.6vw, 32px);
   min-height: 0; padding-block: clamp(12px, 1.1vw, 22px);
 }
 .col { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: .6em; }
@@ -120,7 +120,9 @@ body {
 .game.done .t { font-size: 1.3em; color: var(--dim); }
 .game.done .match { font-size: 1.1em; }
 .game.done .match .own, .game.done .match .opp { color: var(--dim); }
-.game.done .meta, .game.done .where { display: none; }
+.game.done .where { display: none; }
+.game.done .meta { font-size: .8em; }
+.game.done .meta .team { color: var(--muted); }
 .game.cancelled .match, .game.cancelled .t { text-decoration: line-through; }
 .note { color: var(--white); font-weight: 600; }
 .game.home .note { color: var(--blue); }
@@ -128,7 +130,8 @@ body {
 /* rechte Spalte: kleiner */
 .side .game { grid-template-columns: 3.6em minmax(0, 1fr); padding: .45em .5em; }
 .side .game .t { font-size: 1.5em; }
-.side .game .match { font-size: 1.2em; }
+.side .game .match { font-size: 1.2em; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.side .game .meta { white-space: normal; }
 .side .game .where { display: none; }
 .side .state { display: none; }
 /* Ergebnisse: Ergebnis-Feld statt Uhrzeit, Farbe aus Sicht des TuS */
@@ -144,6 +147,11 @@ body {
 .legend { display: flex; gap: 1em; color: var(--muted); font-size: .85em; margin-top: .7em; flex-wrap: wrap; }
 .legend i { display: inline-block; width: .8em; height: .8em; border-radius: 2px; margin-right: .35em; vertical-align: -.05em; }
 .sec { display: none; }
+/* Luftballons statt Ergebnis bei G- und F-Junioren */
+.balloons { display: inline-block; width: 1.9em; height: 1.35em; vertical-align: middle; }
+.state.kids { line-height: 0; }
+.state.kids .balloons { width: 2.6em; height: 1.85em; }
+.res.kids .score { background: none; border: 1px solid var(--line); padding: .05em 0; line-height: 0; }
 [hidden] { display: none !important; }
 .game.done .state.fin { font-family: var(--display); font-weight: 700; font-size: 1.35em; color: var(--white); letter-spacing: .02em; }
 .side h3 { margin: .9em 0 .2em; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-size: 1.15em; }
@@ -285,16 +293,30 @@ function zeile(s, now, mitStatus) {
       '<div class="match">' + paarung + '</div>' +
       '<div class="where"><span class="tag ' + (heim ? "h" : "a") + '">' + (heim ? "Heim" : "Auswärts") + '</span>' + esc(s.ort || "Spielort noch offen") + '</div>' +
     '</div>' +
-    (mitStatus ? (z.done && s.e ? '<div class="state fin">' + esc(s.e.replace(":", " : ") + (s.z ? " " + s.z : "")) + '</div>'
+    (mitStatus ? (z.done && kinder(s) && !s.x ? '<div class="state kids">' + BALLONS + '</div>' : z.done && s.e ? '<div class="state fin">' + esc(s.e.replace(":", " : ") + (s.z ? " " + s.z : "")) + '</div>'
                                  : '<div class="state ' + z.cls + '">' + esc(z.text) + '</div>') : "") +
   '</div>';
 }
 
 const ERGEBNIS_TAGE = 3;             // Ergebnisse der letzten 3 Tage zeigen
 
+// G- und F-Junioren: keine Ergebnisse, stattdessen Luftballons
+function kinder(s) { return /^[GF]-Junior/i.test(s.team || ""); }
+const BALLONS =
+  '<svg class="balloons" viewBox="0 0 40 28" aria-label="Luftballons" role="img">' +
+  '<path d="M13 15 Q14 20 12 27 M27 13 Q25 20 27 27" fill="none" stroke="var(--muted)" stroke-width="1"/>' +
+  '<ellipse cx="13" cy="8.5" rx="6" ry="7" fill="var(--white)"/>' +
+  '<path d="M11.8 15.2 L13 17 L14.2 15.2 Z" fill="var(--white)"/>' +
+  '<ellipse cx="27" cy="7" rx="6" ry="7" fill="#5B8FE0"/>' +
+  '<path d="M25.8 13.7 L27 15.5 L28.2 13.7 Z" fill="#5B8FE0"/>' +
+  '<ellipse cx="11" cy="6" rx="1.6" ry="2.4" fill="#D6E2F5"/>' +
+  '<ellipse cx="25" cy="4.5" rx="1.6" ry="2.4" fill="#8DB2EC"/>' +
+  '</svg>';
+
 function ergebnisZeile(s) {
   let art = "open", text = "–:–";
   if (s.x) { art = "cancelled"; text = "abg."; }
+  else if (kinder(s)) { art = "kids"; }
   else if (s.e) {
     text = s.e;
     const [l, r] = (s.e.match(/\d+/g) || []).map(Number);
@@ -306,10 +328,10 @@ function ergebnisZeile(s) {
     '<span class="vs">–</span>' +
     '<span class="' + (eigen(s.a) ? "own" : "opp") + '">' + esc(s.a) + '</span>';
   return '<div class="game res ' + art + '">' +
-    '<div class="score">' + esc(text) + '</div>' +
+    '<div class="score">' + (art === "kids" ? BALLONS : esc(text)) + '</div>' +
     '<div class="who">' +
       '<div class="meta"><span class="team">' + esc(s.team) + '</span><span>' + esc(wettbewerb(s.comp)) +
-        (art === "open" ? ' · Ergebnis folgt' : "") + (s.z ? ' · <span class="note">' + esc(s.z === "n.E." ? "nach Elfmeterschießen" : "nach Verlängerung") + '</span>' : "") + '</span></div>' +
+        (art === "open" && !kinder(s) ? ' · Ergebnis folgt' : "") + (s.z ? ' · <span class="note">' + esc(s.z === "n.E." ? "nach Elfmeterschießen" : "nach Verlängerung") + '</span>' : "") + '</span></div>' +
       '<div class="match">' + paarung + '</div>' +
     '</div></div>';
 }
@@ -362,7 +384,7 @@ function zeichnen() {
 
   // Ergebnisse der letzten 3 Tage (neuester Tag zuerst; Staffeln ohne Ergebnisanzeige entfallen)
   const ab = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - ERGEBNIS_TAGE));
-  const vergangen = sortiert.filter(s => s.d >= ab && s.d < heute && !s.oe);
+  const vergangen = sortiert.filter(s => s.d >= ab && s.d < heute && (!s.oe || kinder(s)));
   const rTage = [];
   for (const s of vergangen) {
     let tag = rTage.find(t => t.d === s.d);
