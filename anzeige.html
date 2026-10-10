@@ -131,7 +131,8 @@ body {
 .side .game { grid-template-columns: 3.6em minmax(0, 1fr); padding: .45em .5em; }
 .side .game .t { font-size: 1.5em; }
 .side .game .match { font-size: 1.2em; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
-.side .game .meta { white-space: normal; }
+.side .game .meta { white-space: normal; display: block; }
+.side .game .meta .team { margin-right: .6em; }
 .side .game .where { display: none; }
 .side .state { display: none; }
 /* Ergebnisse: Ergebnis-Feld statt Uhrzeit, Farbe aus Sicht des TuS */
@@ -289,7 +290,7 @@ function zeile(s, now, mitStatus) {
   return '<div class="' + cls + '">' +
     '<div class="t">' + esc(s.t || "–") + '</div>' +
     '<div class="who">' +
-      '<div class="meta"><span class="team">' + esc(s.team) + '</span><span>' + esc(wettbewerb(s.comp)) + notiz + '</span></div>' +
+      '<div class="meta"><span class="team">' + esc(mannschaft(s.team)) + '</span><span>' + esc(wettbewerb(s.comp)) + notiz + '</span></div>' +
       '<div class="match">' + paarung + '</div>' +
       '<div class="where"><span class="tag ' + (heim ? "h" : "a") + '">' + (heim ? "Heim" : "Auswärts") + '</span>' + esc(s.ort || "Spielort noch offen") + '</div>' +
     '</div>' +
@@ -299,6 +300,15 @@ function zeile(s, now, mitStatus) {
 }
 
 const ERGEBNIS_TAGE = 3;             // Ergebnisse der letzten 3 Tage zeigen
+
+// Altersklasse ergänzen: "B-Junioren" -> "B-Junioren - U17", "D-Juniorinnen" -> "D-Juniorinnen - U13 weibl."
+const ALTER = { A: "U19", B: "U17", C: "U15", D: "U13", E: "U11", F: "U9", G: "U7" };
+function mannschaft(team) {
+  const m = /^([A-G])-Junior(en|innen)\b/i.exec(team || "");
+  if (!m) return team || "";
+  const u = ALTER[m[1].toUpperCase()];
+  return team.slice(0, m[0].length) + " - " + u + (m[2].toLowerCase() === "innen" ? " weibl." : "") + team.slice(m[0].length);
+}
 
 // G- und F-Junioren: keine Ergebnisse, stattdessen Luftballons
 function kinder(s) { return /^[GF]-Junior/i.test(s.team || ""); }
@@ -330,7 +340,7 @@ function ergebnisZeile(s) {
   return '<div class="game res ' + art + '">' +
     '<div class="score">' + (art === "kids" ? BALLONS : esc(text)) + '</div>' +
     '<div class="who">' +
-      '<div class="meta"><span class="team">' + esc(s.team) + '</span><span>' + esc(wettbewerb(s.comp)) +
+      '<div class="meta"><span class="team">' + esc(mannschaft(s.team)) + '</span><span>' + esc(wettbewerb(s.comp)) +
         (art === "open" && !kinder(s) ? ' · Ergebnis folgt' : "") + (s.z ? ' · <span class="note">' + esc(s.z === "n.E." ? "nach Elfmeterschießen" : "nach Verlängerung") + '</span>' : "") + '</span></div>' +
       '<div class="match">' + paarung + '</div>' +
     '</div></div>';
@@ -364,7 +374,7 @@ function zeichnen() {
     heuteEl.innerHTML = '<div class="empty"><strong>Heute keine Spiele</strong>' +
       '<span>Alle Mannschaften haben spielfrei.</span>' +
       (naechstes ? '<div class="next">Nächstes Spiel: <b>' + esc(langDatum(datum(naechstes.d))) + ', ' + esc(naechstes.t || "") + ' Uhr</b><br>' +
-        esc(naechstes.team) + ': ' + esc(naechstes.h) + ' – ' + esc(naechstes.a) + '</div>' : "") +
+        esc(mannschaft(naechstes.team)) + ': ' + esc(naechstes.h) + ' – ' + esc(naechstes.a) + '</div>' : "") +
       '</div>';
   }
 
