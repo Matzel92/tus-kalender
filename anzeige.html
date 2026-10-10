@@ -84,30 +84,31 @@ body {
 .col h2 .count { margin-left: auto; color: var(--muted); font-family: var(--body); font-weight: 500; font-size: .55em; letter-spacing: .08em; }
 
 .list { display: flex; flex-direction: column; }
+/* Spielzeilen – in allen Spalten gleiche Größen und Farben */
 .game {
-  display: grid; grid-template-columns: 5.2em minmax(0, 1fr) auto; column-gap: 1em; align-items: center;
-  padding: .4em .7em; border-bottom: 1px solid var(--line);
+  display: grid; grid-template-columns: 3.9em minmax(0, 1fr) auto; column-gap: .9em; align-items: center;
+  padding: .38em .6em; border-bottom: 1px solid var(--line);
 }
-.game .t { font-family: var(--display); font-weight: 700; font-size: 2.15em; line-height: 1; color: var(--white); }
+.game .t { font-family: var(--display); font-weight: 700; font-size: 1.65em; line-height: 1; color: var(--white); }
 .game .who { min-width: 0; }
-.game .meta { display: flex; gap: .7em; align-items: baseline; color: var(--muted); font-size: .8em; letter-spacing: .03em; flex-wrap: wrap; row-gap: 0; }
-.game .team { color: var(--white); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
-.game .match { font-family: var(--display); font-weight: 500; font-size: 1.9em; line-height: 1.08; overflow-wrap: anywhere; }
+.game .meta { display: block; color: var(--muted); font-size: .8em; letter-spacing: .03em; }
+.game .team { color: var(--white); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-right: .6em; }
+.game .match { font-family: var(--display); font-weight: 500; font-size: 1.5em; line-height: 1.08; overflow-wrap: anywhere; }
 .game .match .own { font-weight: 700; color: var(--white); }
-.game .match .opp { color: var(--muted); }
+.game .match .opp { color: var(--white); }
 .game .match .vs { color: var(--dim); padding: 0 .3em; }
-.game .where { color: var(--muted); font-size: .85em; margin-top: .1em; }
-.tag { display: inline-block; font-size: .78em; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: .1em .45em; border-radius: 3px; margin-right: .4em; }
+.game .where { color: var(--muted); font-size: .8em; margin-top: .1em; }
+.tag { display: inline-block; font-size: .85em; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 0 .4em; border-radius: 3px; margin-right: .4em; }
 .tag.h { background: var(--blue); color: var(--white); }
 .tag.a { border: 1px solid var(--dim); color: var(--muted); }
 
-/* Heimspiele: weiße Zeile mit blauer Schrift */
+/* Heimspiele (noch nicht gespielt): weiße Zeile mit blauer Schrift */
 .game.home { background: var(--white); border-bottom-color: var(--blue-deep); }
-.game.home .t, .game.home .team, .game.home .match .own { color: var(--blue); }
-.game.home .match .opp, .game.home .meta, .game.home .where { color: var(--blue-row); }
+.game.home .t, .game.home .team, .game.home .match .own, .game.home .match .opp { color: var(--blue); }
+.game.home .meta, .game.home .where { color: var(--blue-row); }
 .game.home .match .vs { color: var(--dim); }
 
-.state { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; white-space: nowrap; text-align: right; color: var(--muted); }
+.state { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.1em; white-space: nowrap; text-align: right; color: var(--muted); }
 .state.live { color: var(--live); }
 .state.live::before { content: ""; display: inline-block; width: .55em; height: .55em; border-radius: 50%; background: var(--live); margin-right: .4em; vertical-align: .08em; animation: pulse 1.6s ease-in-out infinite; }
 .state.soon { color: var(--white); background: var(--blue-row); padding: .1em .5em; border-radius: 3px; }
@@ -115,61 +116,42 @@ body {
 .game.home .state.live { color: #0E8A4C; }
 .game.home .state.live::before { background: #0E8A4C; }
 .game.home .state.soon { background: var(--blue); }
+.state .folgt { display: block; font-family: var(--body); font-weight: 500; font-size: .62em; letter-spacing: .04em; text-transform: none; color: var(--muted); margin-top: .15em; }
+.state.fin, .state.kids { line-height: 0; }
 @keyframes pulse { 50% { opacity: .25; } }
 
-/* beendete Spiele: kompakt und gedimmt */
-.game.done { padding-block: .3em; background: none; }
-.game.done .t { font-size: 1.6em; color: var(--white); }
-.game.done .match { font-size: 1.5em; }
-.game.done .match .own, .game.done .match .opp { color: var(--white); }
-.game.done .meta .team { color: var(--white) !important; }
-.game.done.cancelled .t, .game.done.cancelled .match .own, .game.done.cancelled .match .opp { color: var(--muted); }
+/* beendete und abgesetzte Spiele: ohne Adresszeile */
 .game.done .where { display: none; }
-.game.done .meta { font-size: .8em; }
-.game.done .meta .team { color: var(--muted); }
 .game.cancelled .match, .game.cancelled .t { text-decoration: line-through; }
-.game.done .state.off { color: var(--bad); }
+.game.cancelled .t, .game.cancelled .match .own, .game.cancelled .match .opp { color: var(--muted); }
 .note { color: var(--white); font-weight: 600; }
 .game.home .note { color: var(--blue); }
 
-/* rechte Spalte: kleiner */
-.side .game { grid-template-columns: 3.9em minmax(0, 1fr); padding: .38em .5em; }
-.side .game .t { font-size: 1.65em; }
-.side .game .match { font-size: 1.5em; }
-.side .game .meta { white-space: normal; display: block; }
-.side .game .meta .team { margin-right: .6em; }
-.side .game .where { display: none; }
-.side .state { display: none; }
-/* Ergebnisse: Ergebnis-Feld statt Uhrzeit, Farbe aus Sicht des TuS */
-.side .game.res { grid-template-columns: 4.4em minmax(0, 1fr); }
-.score {
-  font-family: var(--display); font-weight: 700; font-size: 1.75em; line-height: 1; text-align: center;
-  padding: .18em 0; border-radius: 4px; background: var(--white); color: var(--blue);
-}
-.res.win .score { background: var(--live); color: var(--blue-deep); }
-.res.loss .score { background: var(--bad); color: var(--blue-deep); }
-.res.open .score, .res.cancelled .score { background: none; color: var(--dim); border: 1px solid var(--line); font-size: 1.15em; }
-.side .res .match { font-size: 1.45em; }
-.legend { display: flex; gap: 1em; color: var(--muted); font-size: .85em; margin-top: .7em; flex-wrap: wrap; }
-.legend i { display: inline-block; width: .8em; height: .8em; border-radius: 2px; margin-right: .35em; vertical-align: -.05em; }
-.sec { display: none; }
-/* Luftballons statt Ergebnis bei G- und F-Junioren */
-.balloons { display: inline-block; width: 1.9em; height: 1.35em; vertical-align: middle; }
-.state.kids { line-height: 0; }
-.state.kids .balloons { width: 3em; height: 2.1em; }
-.res.kids .score { background: none; border: 1px solid var(--line); padding: .05em 0; line-height: 0; }
-[hidden] { display: none !important; }
+/* Ergebnis-Feld – links und rechts identisch; Farbe aus Sicht des TuS */
 .chip {
-  display: inline-block; min-width: 2.2em; text-align: center; padding: .02em .25em; border-radius: 3px;
-  font-family: var(--display); font-weight: 700; letter-spacing: .02em;
-  background: var(--white); color: var(--blue);
+  display: inline-block; min-width: 2.3em; text-align: center; padding: .08em .25em; border-radius: 3px;
+  font-family: var(--display); font-weight: 700; font-size: 1.35em; line-height: 1; letter-spacing: .02em;
+  background: var(--white); color: var(--blue); white-space: nowrap; text-transform: none;
 }
+.chip small { font-size: .6em; font-weight: 600; margin-left: .2em; }
 .chip.win { background: var(--live); color: var(--blue-deep); }
 .chip.loss { background: var(--bad); color: var(--blue-deep); }
-.game.done .state.fin { text-align: right; }
-.state .folgt { display: block; font-family: var(--body); font-weight: 500; font-size: .6em; letter-spacing: .04em; text-transform: none; color: var(--muted); margin-top: .15em; }
-.game.done .state.fin { font-family: var(--display); font-weight: 700; font-size: 1.35em; color: var(--white); letter-spacing: .02em; }
-.side h3 { margin: .55em 0 .15em; font-size: 1em !important; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-size: 1.15em; }
+.chip.open, .chip.cancelled { background: none; color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+
+/* Luftballons statt Ergebnis bei G- und F-Junioren – überall gleich groß */
+.balloons { display: inline-block; width: 2.5em; height: 1.75em; vertical-align: middle; }
+
+/* rechte Spalte: gleiche Zeilen, nur ohne Status und Adresse */
+.side .game { grid-template-columns: 3.9em minmax(0, 1fr); }
+.side .game .where { display: none; }
+.side .state { display: none; }
+.side .game.res { grid-template-columns: 4.6em minmax(0, 1fr); }
+.score { line-height: 0; }
+.legend { display: flex; gap: 1em; color: var(--muted); font-size: .8em; margin-top: .7em; flex-wrap: wrap; }
+.legend i { display: inline-block; width: .8em; height: .8em; border-radius: 2px; margin-right: .35em; vertical-align: -.05em; }
+.sec { display: none; }
+[hidden] { display: none !important; }
+.side h3 { margin: .55em 0 .15em; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-size: 1em; }
 
 .empty { padding: 1.4em .7em; border-bottom: 1px solid var(--line); }
 .empty strong { display: block; font-family: var(--display); font-size: 2em; font-weight: 600; text-transform: uppercase; }
@@ -200,10 +182,8 @@ body {
   .sec { display: block; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.3em; margin-top: .8em; padding-bottom: .2em; border-bottom: 2px solid var(--white); }
   #results:empty { display: none; }
   .main { grid-template-columns: minmax(0, 1fr); }
-  .game { grid-template-columns: 4em minmax(0, 1fr); }
-  .game .state { grid-column: 2; justify-self: start; text-align: left; font-size: .95em; }
-  .game .t { font-size: 1.6em; }
-  .game .match { font-size: 1.45em; }
+  .game { grid-template-columns: 3.9em minmax(0, 1fr); }
+  .game .state { grid-column: 2; justify-self: start; text-align: left; }
 }
 @media (prefers-reduced-motion: reduce) { .state.live::before { animation: none; } .viewport { transition: none; } }
 </style>
@@ -309,7 +289,7 @@ function zeile(s, now, mitStatus) {
       '<div class="match">' + paarung + '</div>' +
       '<div class="where"><span class="tag ' + (heim ? "h" : "a") + '">' + (heim ? "Heim" : "Auswärts") + '</span>' + esc(s.ort || "Spielort noch offen") + '</div>' +
     '</div>' +
-    (mitStatus ? (z.done && kinder(s) && !s.x ? '<div class="state kids">' + BALLONS + '</div>' : z.done && s.e ? '<div class="state fin"><span class="chip ' + ergebnisArt(s) + '">' + esc(s.e) + '</span>' + (s.z ? '<small class="folgt">' + esc(s.z === "n.E." ? "nach Elfmeterschießen" : "nach Verlängerung") + '</small>' : "") + '</div>'
+    (mitStatus ? (z.done && kinder(s) && !s.x ? '<div class="state kids">' + BALLONS + '</div>' : z.done && s.e ? '<div class="state fin"><span class="chip ' + ergebnisArt(s) + '">' + esc(s.e) + (s.z ? '<small>' + esc(s.z) + '</small>' : "") + '</span></div>'
                                  : '<div class="state ' + z.cls + '">' + esc(z.text) +
                                    (z.done && !s.x && !s.oe ? '<small class="folgt">Ergebnis folgt</small>' : "") + '</div>') : "") +
   '</div>';
@@ -361,10 +341,10 @@ function ergebnisZeile(s) {
     '<span class="vs">–</span>' +
     '<span class="' + (eigen(s.a) ? "own" : "opp") + '">' + esc(s.a) + '</span>';
   return '<div class="game res ' + art + '">' +
-    '<div class="score">' + (art === "kids" ? BALLONS : esc(text)) + '</div>' +
+    '<div class="score">' + (art === "kids" ? BALLONS : '<span class="chip ' + art + '">' + esc(text) + (s.e && s.z ? '<small>' + esc(s.z) + '</small>' : "") + '</span>') + '</div>' +
     '<div class="who">' +
       '<div class="meta"><span class="team">' + esc(mannschaft(s.team)) + '</span><span>' + esc(wettbewerb(s.comp)) +
-        (art === "open" && !kinder(s) ? ' · Ergebnis folgt' : "") + (s.z ? ' · <span class="note">' + esc(s.z === "n.E." ? "nach Elfmeterschießen" : "nach Verlängerung") + '</span>' : "") + '</span></div>' +
+        (art === "open" && !kinder(s) ? ' · Ergebnis folgt' : "") + '</span></div>' +
       '<div class="match">' + paarung + '</div>' +
     '</div></div>';
 }
