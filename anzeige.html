@@ -126,6 +126,7 @@ body {
 .game.done .meta { font-size: .8em; }
 .game.done .meta .team { color: var(--muted); }
 .game.cancelled .match, .game.cancelled .t { text-decoration: line-through; }
+.game.done .state.off { color: var(--bad); }
 .note { color: var(--white); font-weight: 600; }
 .game.home .note { color: var(--blue); }
 
@@ -288,7 +289,8 @@ function zeile(s, now, mitStatus) {
     '<span class="' + (eigen(s.h) ? "own" : "opp") + '">' + esc(s.h) + '</span>' +
     '<span class="vs">–</span>' +
     '<span class="' + (eigen(s.a) ? "own" : "opp") + '">' + esc(s.a) + '</span>';
-  const cls = ["game", heim && !z.done ? "home" : "", mitStatus && z.done ? "done" : "", s.x ? "cancelled" : ""].join(" ");
+  const kompakt = z.done || s.x;   // beendete und abgesetzte Spiele klein darstellen
+  const cls = ["game", heim && !kompakt ? "home" : "", mitStatus && kompakt ? "done" : "", s.x ? "cancelled" : ""].join(" ");
   const notiz = s.note ? ' · <span class="note">' + esc(s.note) + '</span>' : "";
   return '<div class="' + cls + '">' +
     '<div class="t">' + esc(s.t || "–") + '</div>' +
@@ -362,8 +364,9 @@ function zeichnen() {
   const heuteSpiele = sortiert.filter(s => s.d === heute);
 
   // laufende und kommende Spiele oben, beendete darunter
-  const offen = heuteSpiele.filter(s => !zustand(s, now).done);
-  const fertig = heuteSpiele.filter(s => zustand(s, now).done);
+  // abgesetzte Spiele werden wie beendete klein in der unteren Liste geführt
+  const offen = heuteSpiele.filter(s => !s.x && !zustand(s, now).done);
+  const fertig = heuteSpiele.filter(s => s.x || zustand(s, now).done);
 
   document.getElementById("todayDate").textContent = langDatum(now);
   document.getElementById("todayCount").textContent = heuteSpiele.length ? heuteSpiele.length + (heuteSpiele.length === 1 ? " Spiel" : " Spiele") : "";
