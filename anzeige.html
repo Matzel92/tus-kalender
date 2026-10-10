@@ -119,9 +119,11 @@ body {
 
 /* beendete Spiele: kompakt und gedimmt */
 .game.done { padding-block: .3em; background: none; }
-.game.done .t { font-size: 1.6em; color: var(--dim); }
+.game.done .t { font-size: 1.6em; color: var(--white); }
 .game.done .match { font-size: 1.5em; }
-.game.done .match .own, .game.done .match .opp { color: var(--dim); }
+.game.done .match .own, .game.done .match .opp { color: var(--white); }
+.game.done .meta .team { color: var(--white) !important; }
+.game.done.cancelled .t, .game.done.cancelled .match .own, .game.done.cancelled .match .opp { color: var(--muted); }
 .game.done .where { display: none; }
 .game.done .meta { font-size: .8em; }
 .game.done .meta .team { color: var(--muted); }
@@ -158,15 +160,15 @@ body {
 .res.kids .score { background: none; border: 1px solid var(--line); padding: .05em 0; line-height: 0; }
 [hidden] { display: none !important; }
 .chip {
-  display: inline-block; min-width: 2.4em; text-align: center; padding: .1em .3em; border-radius: 4px;
+  display: inline-block; min-width: 2.2em; text-align: center; padding: .02em .25em; border-radius: 3px;
   font-family: var(--display); font-weight: 700; letter-spacing: .02em;
   background: var(--white); color: var(--blue);
 }
 .chip.win { background: var(--live); color: var(--blue-deep); }
 .chip.loss { background: var(--bad); color: var(--blue-deep); }
 .game.done .state.fin { text-align: right; }
-.state .folgt { display: block; font-family: var(--body); font-weight: 500; font-size: .55em; letter-spacing: .04em; text-transform: none; color: var(--dim); margin-top: .15em; }
-.game.done .state.fin { font-family: var(--display); font-weight: 700; font-size: 1.8em; color: var(--white); letter-spacing: .02em; }
+.state .folgt { display: block; font-family: var(--body); font-weight: 500; font-size: .6em; letter-spacing: .04em; text-transform: none; color: var(--muted); margin-top: .15em; }
+.game.done .state.fin { font-family: var(--display); font-weight: 700; font-size: 1.35em; color: var(--white); letter-spacing: .02em; }
 .side h3 { margin: .55em 0 .15em; font-size: 1em !important; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-size: 1.15em; }
 
 .empty { padding: 1.4em .7em; border-bottom: 1px solid var(--line); }
