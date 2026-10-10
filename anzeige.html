@@ -157,6 +157,14 @@ body {
 .state.kids .balloons { width: 3em; height: 2.1em; }
 .res.kids .score { background: none; border: 1px solid var(--line); padding: .05em 0; line-height: 0; }
 [hidden] { display: none !important; }
+.chip {
+  display: inline-block; min-width: 2.4em; text-align: center; padding: .1em .3em; border-radius: 4px;
+  font-family: var(--display); font-weight: 700; letter-spacing: .02em;
+  background: var(--white); color: var(--blue);
+}
+.chip.win { background: var(--live); color: var(--blue-deep); }
+.chip.loss { background: var(--bad); color: var(--blue-deep); }
+.game.done .state.fin { text-align: right; }
 .state .folgt { display: block; font-family: var(--body); font-weight: 500; font-size: .55em; letter-spacing: .04em; text-transform: none; color: var(--dim); margin-top: .15em; }
 .game.done .state.fin { font-family: var(--display); font-weight: 700; font-size: 1.8em; color: var(--white); letter-spacing: .02em; }
 .side h3 { margin: .55em 0 .15em; font-size: 1em !important; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-size: 1.15em; }
@@ -299,7 +307,7 @@ function zeile(s, now, mitStatus) {
       '<div class="match">' + paarung + '</div>' +
       '<div class="where"><span class="tag ' + (heim ? "h" : "a") + '">' + (heim ? "Heim" : "Auswärts") + '</span>' + esc(s.ort || "Spielort noch offen") + '</div>' +
     '</div>' +
-    (mitStatus ? (z.done && kinder(s) && !s.x ? '<div class="state kids">' + BALLONS + '</div>' : z.done && s.e ? '<div class="state fin">' + esc(s.e.replace(":", " : ") + (s.z ? " " + s.z : "")) + '</div>'
+    (mitStatus ? (z.done && kinder(s) && !s.x ? '<div class="state kids">' + BALLONS + '</div>' : z.done && s.e ? '<div class="state fin"><span class="chip ' + ergebnisArt(s) + '">' + esc(s.e) + '</span>' + (s.z ? '<small class="folgt">' + esc(s.z === "n.E." ? "nach Elfmeterschießen" : "nach Verlängerung") + '</small>' : "") + '</div>'
                                  : '<div class="state ' + z.cls + '">' + esc(z.text) +
                                    (z.done && !s.x && !s.oe ? '<small class="folgt">Ergebnis folgt</small>' : "") + '</div>') : "") +
   '</div>';
@@ -328,6 +336,13 @@ const BALLONS =
   '<ellipse cx="11" cy="6" rx="1.6" ry="2.4" fill="#D6E2F5"/>' +
   '<ellipse cx="25" cy="4.5" rx="1.6" ry="2.4" fill="#8DB2EC"/>' +
   '</svg>';
+
+// Sieg, Unentschieden oder Niederlage aus Sicht des TuS
+function ergebnisArt(s) {
+  const [l, r] = (s.e.match(/\d+/g) || []).map(Number);
+  const wir = eigen(s.h) && !eigen(s.a) ? l - r : eigen(s.a) && !eigen(s.h) ? r - l : null;
+  return wir === null ? "draw" : wir > 0 ? "win" : wir < 0 ? "loss" : "draw";
+}
 
 function ergebnisZeile(s) {
   let art = "open", text = "–:–";
