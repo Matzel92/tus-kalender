@@ -67,8 +67,9 @@ body {
 }
 .col { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: .6em; }
 .viewport { flex: 1; min-height: 0; overflow: hidden; }
-.viewport .list { position: relative; transition: opacity .4s ease; }
-.viewport .list.fade { opacity: 0; }
+.viewport { transition: opacity .4s ease; }
+.viewport.fade { opacity: 0; }
+.viewport .list { position: relative; }
 .pages { margin-left: auto; display: flex; gap: .35em; align-items: center; }
 .pages i { width: .5em; height: .5em; border-radius: 50%; background: var(--line); }
 .pages i.on { background: var(--white); }
@@ -130,6 +131,21 @@ body {
 .side .game .match { font-size: 1.2em; }
 .side .game .where { display: none; }
 .side .state { display: none; }
+/* Ergebnisse: Ergebnis-Feld statt Uhrzeit, Farbe aus Sicht des TuS */
+.side .game.res { grid-template-columns: 3.9em minmax(0, 1fr); }
+.score {
+  font-family: var(--display); font-weight: 700; font-size: 1.45em; line-height: 1; text-align: center;
+  padding: .18em 0; border-radius: 4px; background: var(--white); color: var(--blue);
+}
+.res.win .score { background: var(--live); color: var(--blue-deep); }
+.res.loss .score { background: var(--bad); color: var(--blue-deep); }
+.res.open .score, .res.cancelled .score { background: none; color: var(--dim); border: 1px solid var(--line); font-size: 1.15em; }
+.res .match { font-size: 1.15em; }
+.legend { display: flex; gap: 1em; color: var(--muted); font-size: .85em; margin-top: .7em; flex-wrap: wrap; }
+.legend i { display: inline-block; width: .8em; height: .8em; border-radius: 2px; margin-right: .35em; vertical-align: -.05em; }
+.sec { display: none; }
+[hidden] { display: none !important; }
+.game.done .state.fin { font-family: var(--display); font-weight: 700; font-size: 1.35em; color: var(--white); letter-spacing: .02em; }
 .side h3 { margin: .9em 0 .2em; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-size: 1.15em; }
 
 .empty { padding: 1.4em .7em; border-bottom: 1px solid var(--line); }
@@ -158,13 +174,15 @@ body {
   .board { height: auto; min-height: 100%; }
   .viewport { overflow: visible; }
   .pages { display: none; }
+  .sec { display: block; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.3em; margin-top: .8em; padding-bottom: .2em; border-bottom: 2px solid var(--white); }
+  #results:empty { display: none; }
   .main { grid-template-columns: minmax(0, 1fr); }
   .game { grid-template-columns: 4em minmax(0, 1fr); }
   .game .state { grid-column: 2; justify-self: start; text-align: left; font-size: .95em; }
   .game .t { font-size: 1.6em; }
   .game .match { font-size: 1.25em; }
 }
-@media (prefers-reduced-motion: reduce) { .state.live::before { animation: none; } .viewport .list { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .state.live::before { animation: none; } .viewport { transition: none; } }
 </style>
 </head>
 <body>
@@ -197,8 +215,8 @@ body {
       <div class="list" id="today"></div>
     </section>
     <aside class="col side">
-      <h2><span class="when">Nächste 7 Tage</span><span class="pages" id="nextPages" aria-hidden="true"></span></h2>
-      <div class="viewport" id="nextWrap"><div class="list" id="next"></div></div>
+      <h2><span class="when" id="sideLabel">Nächste 7 Tage</span><span class="pages" id="nextPages" aria-hidden="true"></span></h2>
+      <div class="viewport" id="nextWrap"><div class="list" id="results"></div><div class="list" id="next"></div></div>
     </aside>
   </main>
 
@@ -267,8 +285,33 @@ function zeile(s, now, mitStatus) {
       '<div class="match">' + paarung + '</div>' +
       '<div class="where"><span class="tag ' + (heim ? "h" : "a") + '">' + (heim ? "Heim" : "Auswärts") + '</span>' + esc(s.ort || "Spielort noch offen") + '</div>' +
     '</div>' +
-    (mitStatus ? '<div class="state ' + z.cls + '">' + esc(z.text) + '</div>' : "") +
+    (mitStatus ? (z.done && s.e ? '<div class="state fin">' + esc(s.e.replace(":", " : ") + (s.z ? " " + s.z : "")) + '</div>'
+                                 : '<div class="state ' + z.cls + '">' + esc(z.text) + '</div>') : "") +
   '</div>';
+}
+
+const ERGEBNIS_TAGE = 3;             // Ergebnisse der letzten 3 Tage zeigen
+
+function ergebnisZeile(s) {
+  let art = "open", text = "–:–";
+  if (s.x) { art = "cancelled"; text = "abg."; }
+  else if (s.e) {
+    text = s.e;
+    const [l, r] = (s.e.match(/\d+/g) || []).map(Number);
+    const wir = eigen(s.h) && !eigen(s.a) ? l - r : eigen(s.a) && !eigen(s.h) ? r - l : null;
+    art = wir === null ? "draw" : wir > 0 ? "win" : wir < 0 ? "loss" : "draw";
+  }
+  const paarung =
+    '<span class="' + (eigen(s.h) ? "own" : "opp") + '">' + esc(s.h) + '</span>' +
+    '<span class="vs">–</span>' +
+    '<span class="' + (eigen(s.a) ? "own" : "opp") + '">' + esc(s.a) + '</span>';
+  return '<div class="game res ' + art + '">' +
+    '<div class="score">' + esc(text) + '</div>' +
+    '<div class="who">' +
+      '<div class="meta"><span class="team">' + esc(s.team) + '</span><span>' + esc(wettbewerb(s.comp)) +
+        (art === "open" ? ' · Ergebnis folgt' : "") + (s.z ? ' · <span class="note">' + esc(s.z === "n.E." ? "nach Elfmeterschießen" : "nach Verlängerung") + '</span>' : "") + '</span></div>' +
+      '<div class="match">' + paarung + '</div>' +
+    '</div></div>';
 }
 
 function zeichnen() {
@@ -315,6 +358,25 @@ function zeichnen() {
     '<h3>' + (t.d === morgen ? "Morgen · " : "") + esc(langDatum(datum(t.d))) + '</h3>' +
     t.spiele.map(s => zeile(s, now, false)).join("")
   ).join("") || (geladen ? '<div class="empty"><span>In den nächsten 7 Tagen sind keine Spiele angesetzt.</span></div>' : "");
+  document.getElementById("next").insertAdjacentHTML("afterbegin", '<div class="sec">Nächste 7 Tage</div>');
+
+  // Ergebnisse der letzten 3 Tage (neuester Tag zuerst; Staffeln ohne Ergebnisanzeige entfallen)
+  const ab = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - ERGEBNIS_TAGE));
+  const vergangen = sortiert.filter(s => s.d >= ab && s.d < heute && !s.oe);
+  const rTage = [];
+  for (const s of vergangen) {
+    let tag = rTage.find(t => t.d === s.d);
+    if (!tag) { tag = { d: s.d, spiele: [] }; rTage.push(tag); }
+    tag.spiele.push(s);
+  }
+  rTage.sort((a, b) => b.d.localeCompare(a.d));
+  const gestern = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+  document.getElementById("results").innerHTML = rTage.length ?
+    '<div class="sec">Ergebnisse · letzte ' + ERGEBNIS_TAGE + ' Tage</div>' +
+    rTage.map(t => '<h3>' + (t.d === gestern ? "Gestern · " : "") + esc(langDatum(datum(t.d))) + '</h3>' +
+      t.spiele.map(ergebnisZeile).join("")).join("") +
+    '<div class="legend"><span><i style="background:var(--live)"></i>Sieg</span><span><i style="background:var(--white)"></i>Unentschieden</span><span><i style="background:var(--bad)"></i>Niederlage</span></div>'
+    : "";
   seitenBauen();
 
   const standEl = document.getElementById("stand");
@@ -327,19 +389,34 @@ function zeichnen() {
   }
 }
 
+// Zuerst die Datei neben dieser Seite (Webspace), sonst die Online-Adresse –
+// so funktioniert die Seite auch, wenn sie lokal auf einem Rechner geöffnet wird.
+const DATEN_QUELLEN = ["spiele.json", "https://kalender.tus-harpen.de/spiele.json"];
+let fehlversuche = 0;
 async function nachladen() {
-  try {
-    const r = await fetch("spiele.json?" + Date.now(), { cache: "no-store" });
-    if (!r.ok) return;
-    const d = await r.json();
-    const liste = Array.isArray(d) ? d : d.spiele;
-    if (Array.isArray(liste) && liste.length) {
-      SPIELE = liste;
-      STAND = d.stand ? new Date(d.stand) : null;
-      geladen = true;
-      zeichnen();
-    }
-  } catch (e) { /* kurzzeitig offline: der letzte Stand bleibt stehen */ }
+  for (const url of DATEN_QUELLEN) {
+    try {
+      const r = await fetch(url + "?" + Date.now(), { cache: "no-store" });
+      if (!r.ok) continue;
+      const d = await r.json();
+      const liste = Array.isArray(d) ? d : d.spiele;
+      if (Array.isArray(liste) && liste.length) {
+        SPIELE = liste;
+        STAND = d.stand ? new Date(d.stand) : null;
+        geladen = true; fehlversuche = 0;
+        zeichnen();
+        return;
+      }
+    } catch (e) { /* nächste Quelle probieren */ }
+  }
+  // Nichts erreichbar: beim ersten Laden einen Hinweis zeigen, sonst bleibt der letzte Stand stehen
+  fehlversuche++;
+  if (!geladen) {
+    document.getElementById("today").innerHTML =
+      '<div class="empty"><strong>Spieldaten nicht erreichbar</strong>' +
+      '<span>Bitte Internetverbindung prüfen. Die Seite versucht es automatisch erneut.</span></div>';
+    setTimeout(nachladen, 30000);
+  }
 }
 
 document.getElementById("btnFull").addEventListener("click", async () => {
@@ -349,39 +426,63 @@ async function wachHalten() { try { await navigator.wakeLock?.request("screen");
 document.addEventListener("visibilitychange", () => { if (!document.hidden) wachHalten(); });
 wachHalten();
 
-// Passt die Liste der nächsten 7 Tage nicht auf den Bildschirm, wird sie in Seiten
-// aufgeteilt, die alle 12 Sekunden wechseln. Ein Tag wird dabei nicht mitten in der Überschrift getrennt.
-let seiten = [0], seite = 0;
+// Die rechte Spalte wechselt alle 12 Sekunden: zuerst die Ergebnisse der letzten Tage, dann die
+// nächsten 7 Tage. Passt eine Liste nicht auf den Bildschirm, wird sie in mehrere Seiten geteilt;
+// ein Tag wird dabei nicht direkt nach seiner Überschrift getrennt.
+let seiten = [], seite = 0;
+const TITEL = { results: "Ergebnisse", next: "Nächste 7 Tage" };
 function seitenBauen() {
-  const vp = document.getElementById("nextWrap"), list = document.getElementById("next");
-  const kinder = Array.from(list.children);
-  seiten = [0];
-  if (getComputedStyle(vp).overflowY === "hidden") {
-    const H = vp.clientHeight;
+  const vp = document.getElementById("nextWrap");
+  const blaettern = getComputedStyle(vp).overflowY === "hidden";
+  const alt = seiten[seite];
+  seiten = [];
+  for (const id of ["results", "next"]) {
+    const list = document.getElementById(id);
+    list.hidden = false; list.style.transform = "";
+    for (const el of list.children) el.style.visibility = "";
+    if (!list.children.length) continue;
+    if (!blaettern) { seiten.push({ list: id, oben: 0 }); continue; }
+    // Kinder sind relativ zu ihrer Liste positioniert (position: relative)
+    const H = vp.clientHeight, kinder = Array.from(list.children).filter(el => el.offsetHeight);
     let start = 0;
+    seiten.push({ list: id, oben: 0 });
     kinder.forEach((el, i) => {
       if (el.offsetTop + el.offsetHeight - start > H && el.offsetTop > start) {
         const vorher = kinder[i - 1];
         start = (vorher && vorher.tagName === "H3" && vorher.offsetTop > start) ? vorher.offsetTop : el.offsetTop;
-        seiten.push(start);
+        seiten.push({ list: id, oben: start });
       }
     });
   }
-  if (seite >= seiten.length) seite = 0;
+  if (!seiten.length) seiten = [{ list: "next", oben: 0 }];
+  const idx = alt ? seiten.findIndex(p => p.list === alt.list && p.oben === alt.oben) : -1;
+  seite = idx >= 0 ? idx : Math.min(seite, seiten.length - 1);
   seiteZeigen();
 }
 function seiteZeigen() {
-  const vp = document.getElementById("nextWrap"), list = document.getElementById("next");
-  const oben = seiten[seite], unten = seiten[seite + 1] ?? Infinity;
-  list.style.transform = seiten.length > 1 ? "translateY(" + (-oben) + "px)" : "";
-  for (const el of list.children) el.style.visibility = (el.offsetTop >= oben && el.offsetTop < unten) ? "" : "hidden";
+  const vp = document.getElementById("nextWrap");
+  if (getComputedStyle(vp).overflowY !== "hidden") {
+    document.getElementById("sideLabel").textContent = document.getElementById("results").children.length ? "Ergebnisse & Vorschau" : "Nächste 7 Tage";
+    document.getElementById("nextPages").innerHTML = "";
+    return;
+  }
+  const p = seiten[seite];
+  for (const id of ["results", "next"]) {
+    const list = document.getElementById(id), aktiv = id === p.list;
+    list.hidden = !aktiv;
+    if (!aktiv) continue;
+    const folge = seiten[seite + 1], unten = folge && folge.list === id ? folge.oben : Infinity;
+    list.style.transform = p.oben ? "translateY(" + (-p.oben) + "px)" : "";
+    for (const el of list.children) el.style.visibility = (el.offsetTop >= p.oben && el.offsetTop < unten) ? "" : "hidden";
+  }
+  document.getElementById("sideLabel").textContent = TITEL[p.list];
   document.getElementById("nextPages").innerHTML = seiten.length > 1 ? seiten.map((_, i) => '<i class="' + (i === seite ? "on" : "") + '"></i>').join("") : "";
 }
 setInterval(() => {
   if (seiten.length < 2) return;
-  const list = document.getElementById("next");
-  list.classList.add("fade");
-  setTimeout(() => { seite = (seite + 1) % seiten.length; seiteZeigen(); list.classList.remove("fade"); }, 400);
+  const vp = document.getElementById("nextWrap");
+  vp.classList.add("fade");
+  setTimeout(() => { seite = (seite + 1) % seiten.length; seiteZeigen(); vp.classList.remove("fade"); }, 400);
 }, 12000);
 window.addEventListener("resize", seitenBauen);
 
@@ -391,7 +492,12 @@ function zeigeLogo(src) {
   img.onload = () => { img.hidden = false; document.getElementById("logoPlaceholder").hidden = true; };
   img.src = src;
 }
-zeigeLogo("logo.png?" + new Date().toISOString().slice(0, 10));
+(function () {
+  const tag = new Date().toISOString().slice(0, 10);
+  const img = document.getElementById("logoImg");
+  img.onerror = () => { img.onerror = null; zeigeLogo("https://kalender.tus-harpen.de/logo.png?" + tag); };
+  zeigeLogo("logo.png?" + tag);
+})();
 
 // Nachts einmal neu laden, damit Änderungen an der Seite selbst ankommen
 setInterval(() => {
