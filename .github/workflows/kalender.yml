@@ -10,8 +10,16 @@ name: Spielplan auf IONOS aktualisieren
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   # alle 15 Minuten (GitHub startet teils mit Verzögerung)
-  workflow_dispatch:         # manuell startbar über den Reiter "Actions"
+    - cron: "7,22,37,52 * * * *"   # alle 15 Minuten, versetzt (GitHub startet teils mit Verzögerung)
+  workflow_dispatch:               # manuell oder von außen (cron-job.org) startbar
+  push:                            # nach jeder Änderung an den Dateien sofort neu veröffentlichen
+    branches: [main]
+    paths:
+      - "anzeige.html"
+      - "fussballde_kalender.py"
+      - "spielplan_pdf.py"
+      - "logo.png"
+      - ".github/workflows/kalender.yml"
 
 concurrency:
   group: kalender

@@ -143,7 +143,8 @@ body {
 
 /* rechte Spalte: gleiche Zeilen, nur ohne Status und Adresse */
 .side .game { grid-template-columns: 3.9em minmax(0, 1fr); }
-.side .game .where { display: none; }
+.side .game .where, .game.kurz .where { display: none; }
+.side .game.anders .where, .game.kurz.anders .where { display: block; }
 .side .state { display: none; }
 .side .game.res { grid-template-columns: 4.6em minmax(0, 1fr); }
 .score { line-height: 0; }
@@ -151,9 +152,15 @@ body {
 .legend i { display: inline-block; width: .8em; height: .8em; border-radius: 2px; margin-right: .35em; vertical-align: -.05em; }
 .sec { display: none; }
 [hidden] { display: none !important; }
-.side h3 { margin: .55em 0 .15em; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-size: 1em; }
+.list h3 { margin: .55em 0 .15em; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-size: 1em; }
 
 .empty { padding: 1.4em .7em; border-bottom: 1px solid var(--line); }
+.empty.klein { padding: .7em .6em; }
+.empty.klein strong { font-size: 1.5em; }
+.zwischen {
+  margin-top: .9em; padding-bottom: .25em; border-bottom: 2px solid var(--white);
+  font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em;
+}
 .empty strong { display: block; font-family: var(--display); font-size: 2em; font-weight: 600; text-transform: uppercase; }
 .empty span { color: var(--muted); font-size: 1.1em; }
 .empty .next { margin-top: .9em; color: var(--white); font-size: 1.25em; }
@@ -255,7 +262,10 @@ function datum(isoStr) { const [y, m, d] = isoStr.split("-").map(Number); return
 function langDatum(d) { return TAGE[d.getDay()] + ", " + d.getDate() + ". " + MONATE[d.getMonth()]; }
 function anstoss(s) { if (!s.t) return null; const [h, m] = s.t.split(":").map(Number); const d = datum(s.d); d.setHours(h, m, 0, 0); return d; }
 function eigen(name) { return name.toLowerCase().includes(VEREIN); }
-function wettbewerb(c) { return /freundschaft/i.test(c) ? "Freundschaftsspiel" : c; }
+function wettbewerb(c) {
+  if (/freundschaft/i.test(c)) return "Freundschaftsspiel";
+  return (c || "").replace(/Verbandspokal/g, "Westfalenpokal");
+}
 function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
 
 function zustand(s, now) {
@@ -272,7 +282,10 @@ function zustand(s, now) {
   return { cls: "", text: "Beendet", done: true };
 }
 
-function zeile(s, now, mitStatus) {
+// Heimspiele finden normalerweise im Bockholt statt – weicht der Platz ab, wird die Adresse immer gezeigt
+function andererPlatz(s) { return eigen(s.h) && s.ort && !/Bockholt|Steffenhorst/i.test(s.ort); }
+
+function zeile(s, now, mitStatus, kurz) {
   const z = zustand(s, now);
   const heim = eigen(s.h);
   const paarung =
@@ -280,14 +293,15 @@ function zeile(s, now, mitStatus) {
     '<span class="vs">–</span>' +
     '<span class="' + (eigen(s.a) ? "own" : "opp") + '">' + esc(s.a) + '</span>';
   const kompakt = z.done || s.x;   // beendete und abgesetzte Spiele klein darstellen
-  const cls = ["game", heim && !kompakt ? "home" : "", mitStatus && kompakt ? "done" : "", s.x ? "cancelled" : ""].join(" ");
+  const cls = ["game", heim && !kompakt ? "home" : "", mitStatus && kompakt ? "done" : "", s.x ? "cancelled" : "",
+               kurz ? "kurz" : "", andererPlatz(s) && !kompakt ? "anders" : ""].join(" ");
   const notiz = s.note ? ' · <span class="note">' + esc(s.note) + '</span>' : "";
-  return '<div class="' + cls + '">' +
+  return '<div class="' + cls + '" data-k="' + esc(s.d + "|" + s.t + "|" + s.h + "|" + s.a) + '">' +
     '<div class="t">' + esc(s.t || "–") + '</div>' +
     '<div class="who">' +
       '<div class="meta"><span class="team">' + esc(mannschaft(s.team)) + '</span><span>' + esc(wettbewerb(s.comp)) + notiz + '</span></div>' +
       '<div class="match">' + paarung + '</div>' +
-      '<div class="where"><span class="tag ' + (heim ? "h" : "a") + '">' + (heim ? "Heim" : "Auswärts") + '</span>' + esc(s.ort || "Spielort noch offen") + '</div>' +
+      '<div class="where"><span class="tag ' + (heim ? "h" : "a") + '">' + (andererPlatz(s) ? "Heim · anderer Platz" : heim ? "Heim" : "Auswärts") + '</span>' + esc(s.ort || "Spielort noch offen") + '</div>' +
     '</div>' +
     (mitStatus ? (z.done && kinder(s) && !s.x ? '<div class="state kids">' + BALLONS + '</div>' : z.done && s.e ? '<div class="state fin"><span class="chip ' + ergebnisArt(s) + '">' + esc(s.e) + (s.z ? '<small>' + esc(s.z) + '</small>' : "") + '</span></div>'
                                  : '<div class="state ' + z.cls + '">' + esc(z.text) +
@@ -371,15 +385,21 @@ function zeichnen() {
   const heuteEl = document.getElementById("today");
   if (!geladen) {
     heuteEl.innerHTML = '<div class="empty"><strong>Spielplan wird geladen</strong><span>Einen Moment bitte …</span></div>';
-  } else if (heuteSpiele.length) {
-    heuteEl.innerHTML = offen.concat(fertig).map(s => zeile(s, now, true)).join("");
   } else {
-    const naechstes = sortiert.find(s => s.d > heute && !s.x);
-    heuteEl.innerHTML = '<div class="empty"><strong>Heute keine Spiele</strong>' +
-      '<span>Alle Mannschaften haben spielfrei.</span>' +
-      (naechstes ? '<div class="next">Nächstes Spiel: <b>' + esc(langDatum(datum(naechstes.d))) + ', ' + esc(naechstes.t || "") + ' Uhr</b><br>' +
-        esc(mannschaft(naechstes.team)) + ': ' + esc(naechstes.h) + ' – ' + esc(naechstes.a) + '</div>' : "") +
-      '</div>';
+    let html = heuteSpiele.length
+      ? offen.concat(fertig).map(s => zeile(s, now, true)).join("")
+      : '<div class="empty klein"><strong>Heute keine Spiele</strong></div>';
+    // Füller: kommende Spiele ab morgen, egal wann – werden nach dem Aufbau auf die freie Fläche gekürzt
+    const kommend = sortiert.filter(s => s.d > heute && !s.x).slice(0, 40);
+    if (kommend.length) {
+      html += '<div class="zwischen fill">Als Nächstes</div>';
+      let tag = "";
+      for (const s of kommend) {
+        if (s.d !== tag) { tag = s.d; html += '<h3 class="fill">' + (s.d === morgen ? "Morgen · " : "") + esc(langDatum(datum(s.d))) + '</h3>'; }
+        html += zeile(s, now, false, true).replace('class="game', 'class="fill game');
+      }
+    }
+    heuteEl.innerHTML = html;
   }
 
   // rechte Spalte: alle Spiele der nächsten 7 Tage, nach Tagen gruppiert
@@ -423,7 +443,7 @@ function zeichnen() {
     standEl.className = alt ? "stale" : "";
   }
   // erst messen, wenn alles (auch Kopf- und Fußzeile) fertig gesetzt ist
-  requestAnimationFrame(() => { rechts.bauen(); links.bauen(); });
+  requestAnimationFrame(() => { fuellerKuerzen(); rechts.bauen(); links.bauen(); });
 }
 
 // Zuerst die Datei neben dieser Seite (Webspace), sonst die Online-Adresse –
@@ -466,6 +486,35 @@ wachHalten();
 // Blättern: Passt eine Liste nicht auf den Bildschirm, wird sie in Seiten geteilt, die alle
 // 12 Sekunden wechseln. Rechts folgen die Ergebnisse und die nächsten 7 Tage aufeinander.
 // Ein Tag wird dabei nicht direkt nach seiner Überschrift getrennt.
+// Links nur so viele kommende Spiele zeigen, wie ohne Blättern auf die Fläche passen.
+// Reichen schon die heutigen Spiele nicht, entfällt der Füller ganz.
+function fuellerKuerzen() {
+  const vp = document.getElementById("todayWrap"), list = document.getElementById("today");
+  const fill = Array.from(list.querySelectorAll(".fill"));
+  if (!fill.length) return;
+  list.hidden = false; list.style.transform = "";
+  if (getComputedStyle(vp).overflowY !== "hidden") return;   // Handy: alles zeigen
+  const H = vp.clientHeight;
+  const unten = el => el.offsetTop + el.offsetHeight;
+  const fest = Array.from(list.children).filter(el => !el.classList.contains("fill"));
+  if (fest.length && unten(fest[fest.length - 1]) > H) { fill.forEach(el => el.remove()); return; }
+  for (const el of fill) if (unten(el) > H) el.remove();
+  // keine Überschriften ohne Spiele darunter stehen lassen
+  let rest = Array.from(list.querySelectorAll(".fill"));
+  while (rest.length && !rest[rest.length - 1].classList.contains("game")) { rest.pop().remove(); }
+  if (!list.querySelector(".fill.game")) list.querySelectorAll(".fill").forEach(el => el.remove());
+
+  // Was links schon steht, rechts bei den nächsten 7 Tagen nicht noch einmal zeigen
+  const links = new Set(Array.from(list.querySelectorAll(".fill.game")).map(el => el.dataset.k));
+  const rechts = document.getElementById("next");
+  rechts.querySelectorAll(".game").forEach(el => { if (links.has(el.dataset.k)) el.remove(); });
+  rechts.querySelectorAll("h3").forEach(h => {
+    const n = h.nextElementSibling;
+    if (!n || !n.classList.contains("game")) h.remove();
+  });
+  if (!rechts.querySelector(".game")) rechts.innerHTML = "";
+}
+
 function Blaettern(vpId, listIds, dotsId, titel) {
   const st = { seiten: [], seite: 0 };
   const vp = () => document.getElementById(vpId);

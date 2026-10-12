@@ -366,7 +366,8 @@ def parse_matchplan(html: str, deob: "Deobfuscator | None" = None) -> list[Match
                 cur_day, cur_time = None, None
             lbl = label_from_row(tr)
             if lbl:
-                cur_label = lbl
+                # Der Verbandspokal heißt in Westfalen "Westfalenpokal"
+                cur_label = lbl.replace("Verbandspokal", "Westfalenpokal")
             continue
 
         # Spielort-Zeile gehört zum vorherigen Spiel
