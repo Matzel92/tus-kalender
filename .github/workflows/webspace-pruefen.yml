@@ -3,6 +3,11 @@ name: Webspace prüfen (Ordnerübersicht)
 
 on:
   workflow_dispatch:
+    inputs:
+      leerer_ordner:
+        description: "Optional: LEEREN Ordner entfernen (Pfad relativ zu /matz_dinge, z. B. kalender/kalender). Nicht-leere Ordner bleiben unangetastet."
+        required: false
+        default: ""
 
 jobs:
   liste:
@@ -11,6 +16,16 @@ jobs:
     steps:
       - name: lftp installieren
         run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+      - name: Leeren Ordner entfernen (nur wenn angegeben)
+        if: ${{ inputs.leerer_ordner != '' }}
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          ORDNER: ${{ inputs.leerer_ordner }}
+        run: |
+          case "$ORDNER" in *..*|/*) echo "::error::Nur Pfade innerhalb von /matz_dinge erlaubt"; exit 1;; esac
+          lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "set sftp:auto-confirm yes; set net:timeout 30; rmdir $ORDNER; bye"
       - name: Ordner auflisten (3 Ebenen)
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
