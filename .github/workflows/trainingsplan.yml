@@ -57,6 +57,17 @@ jobs:
           ORDNER: ${{ vars.TRAININGSPLAN_ORDNER || 'trainingsplan' }}
         working-directory: site
         run: |
+          VERB="set sftp:auto-confirm yes; set net:max-retries 2; set net:timeout 30;"
+          # Sicherheitsprüfung: Startordner muss /matz_dinge sein (dort liegt der Ordner "kalender").
+          # Zeigt der SFTP-Benutzer noch auf /matz_dinge/kalender, würde der Trainingsplan im Kalender-Ordner landen.
+          INHALT=$(lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "$VERB cls -1; bye")
+          echo "Startordner enthält:"; echo "$INHALT"
+          if ! echo "$INHALT" | grep -qx "kalender/\?"; then
+            echo "::error::Der SFTP-Startordner ist nicht /matz_dinge (kein Ordner 'kalender' gefunden). Bitte bei IONOS unter SFTP & SSH das Verzeichnis des Benutzers auf /matz_dinge stellen."
+            exit 1
+          fi
+          # Aufräumen: versehentlich angelegten Ordner im Kalender entfernen (erster Upload am 04.11.2026)
+          lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "$VERB rm -r -f kalender/trainingsplan; bye" || true
           lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "
             set sftp:auto-confirm yes;
             set net:max-retries 2;
