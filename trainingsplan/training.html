@@ -374,7 +374,7 @@ const G = { x: 8, y: 8, w: 320, h: 320 };
 const ZONEN = {
   HL: { x: 8, y: 8, w: 160, h: 160 }, HR: { x: 168, y: 8, w: 160, h: 160 },
   VL: { x: 8, y: 168, w: 160, h: 160 }, VR: { x: 168, y: 168, w: 160, h: 160 },
-  Kleinfeld: { x: 128, y: 342, w: 160, h: 102 },
+  Kleinfeld: { x: 73.1, y: 342, w: 214.9, h: 102 },   // links bündig mit der Strafraumlinie
   Laufbahn: { x: 330, y: 58, w: 42, h: 284 }
 };
 function grundriss() {
@@ -386,7 +386,7 @@ function grundriss() {
   s += '<rect x="8" y="8" width="320" height="320" fill="var(--grass)"/>';
   s += '<rect x="8" y="328" width="320" height="14" fill="#FF7B59"/>';
   s += '<rect x="8" y="342" width="320" height="102" fill="#7CC424"/>';
-  s += '<rect x="128" y="342" width="160" height="102" fill="var(--grass)"/>';
+  s += '<rect x="73.1" y="342" width="214.9" height="102" fill="var(--grass)"/>';
   s += '<rect x="330" y="8" width="42" height="50" fill="#FFDBB6"/>';
   s += '<rect x="330" y="58" width="42" height="284" fill="#C9211E"/>';
   s += '<rect x="330" y="342" width="42" height="102" fill="#BDBDBD"/>';
@@ -404,10 +404,10 @@ function grundriss() {
     s += '<path d="M' + (cx - dx) + ' ' + by + ' A' + R + ' ' + R + ' 0 0 ' + (dir > 0 ? 0 : 1) + ' ' + (cx + dx) + ' ' + by + '" ' + L + '/>';
   }
   // Kleinfeld
-  s += '<rect x="128.8" y="342.8" width="158.4" height="100.4" ' + L + '/>';
-  s += '<line x1="208" y1="342.8" x2="208" y2="443.2" ' + L + '/>';
-  s += '<circle cx="208" cy="393" r="14" ' + L + '/>';
-  s += '<rect x="128.8" y="367" width="22" height="52" ' + L + '/><rect x="265.2" y="367" width="22" height="52" ' + L + '/>';
+  s += '<rect x="73.9" y="342.8" width="213.3" height="100.4" ' + L + '/>';
+  s += '<line x1="180.55" y1="342.8" x2="180.55" y2="443.2" ' + L + '/>';
+  s += '<circle cx="180.55" cy="393" r="16" ' + L + '/>';
+  s += '<rect x="73.9" y="363" width="28" height="60" ' + L + '/><rect x="259.2" y="363" width="28" height="60" ' + L + '/>';
   return s;
 }
 function umbruch(text, maxZ) {
@@ -616,7 +616,7 @@ function platzAufteilung() {
   s += '<line x1="168" y1="8" x2="168" y2="328" stroke="#fff" stroke-width="3" stroke-dasharray="10 6"/>';
   s += '<line x1="8" y1="168" x2="328" y2="168" stroke="#fff" stroke-width="3" stroke-dasharray="10 6"/>';
   for (const f of ["HL", "HR", "VL", "VR"]) { const z = ZONEN[f]; s += lab(z.x + z.w / 2, z.y + z.h / 2, f, 34); }
-  s += lab(208, 393, "Kleinfeld", 30);
+  s += lab(180.55, 393, "Kleinfeld", 32);
   s += '<text transform="translate(351 200) rotate(-90)" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="26" fill="#fff">Laufbahn</text>';
   return '<svg viewBox="0 0 380 452" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Aufteilung des Sportplatzes: hinten HL und HR, vorne VL und VR, darunter Kleinfeld, rechts Laufbahn">' + s + '</svg>';
 }
