@@ -128,14 +128,19 @@ body {
 .day { min-width: 0; }
 .day h3 { margin: 0; line-height: 1.1; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid var(--white); }
 .day.today h3 span { background: var(--white); color: var(--blue); padding: 0 .3em; }
-.lh, .dg { display: grid; grid-template-columns: 2.7em repeat(5, minmax(0, 1fr)) minmax(0, .6fr); }
+.lh, .dg { display: grid; grid-template-columns: 2.7em repeat(5, minmax(0, 1fr)) minmax(0, .6fr) 0; }
 .lh { color: var(--muted); padding: .2em 0; }
 .lh span { font-size: .72em; font-weight: 600; letter-spacing: .04em; text-align: center; white-space: nowrap; overflow: hidden; }
 .dg { grid-template-rows: repeat(var(--n), var(--slot)); position: relative; }
 .dg .lane { grid-row: 1 / -1; border-left: 1px solid var(--line); background: repeating-linear-gradient(to bottom, rgba(255,255,255,.13) 0 1px, transparent 1px calc(var(--slot) * 4)); }
 .dg .lane.lb { background-color: rgba(201,33,30,.12); }
 .dg .ax { grid-column: 1; font-size: .72em; color: var(--muted); line-height: 1; transform: translateY(-.45em); text-align: right; padding-right: .45em; }
-.wk .day:not(:nth-child(3n+1)) .lh, .wk .day:not(:nth-child(3n+1)) .dg { grid-template-columns: 0 repeat(5, minmax(0, 1fr)) minmax(0, .6fr); }
+.dg .axr { grid-column: 8; font-size: .72em; color: var(--muted); line-height: 1; transform: translateY(-.45em); text-align: left; padding-left: .45em; display: none; }
+.wk .day:not(:nth-child(3n+1)) .lh, .wk .day:not(:nth-child(3n+1)) .dg { grid-template-columns: 0 repeat(5, minmax(0, 1fr)) minmax(0, .6fr) 0; }
+/* Uhrzeiten auch rechts: am letzten Tag jeder Zeile (Mittwoch, Freitag) */
+.wk .day:nth-child(3n) .lh, .wk .day:nth-child(3n) .dg, .wk .day:nth-last-child(2) .lh, .wk .day:nth-last-child(2) .dg { grid-template-columns: 0 repeat(5, minmax(0, 1fr)) minmax(0, .6fr) 2.7em; }
+.wk .day:nth-child(3n) .axr, .wk .day:nth-last-child(2) .axr { display: block; }
+.wk .day:nth-child(3n) .nowline, .wk .day:nth-last-child(2) .nowline { right: 2.7em; }
 .wk .day:not(:nth-child(3n+1)) .ax, .wk .day:not(:nth-child(3n+1)) .lh span:first-child { visibility: hidden; }
 .blk { margin: 1px; border-radius: 3px; padding: .12em .25em; overflow: hidden; cursor: pointer; z-index: 1;
   font-family: var(--display); font-weight: 700; font-size: .95em; line-height: 1.05; border: 0; text-align: center;
@@ -186,7 +191,10 @@ body {
 
 @media (max-width: 800px) {
   .wk { grid-template-columns: minmax(0, 1fr); --slot: 1.25em; }
-  .wk .day:not(:nth-child(3n+1)) .lh, .wk .day:not(:nth-child(3n+1)) .dg { grid-template-columns: 2.7em repeat(5, minmax(0, 1fr)) minmax(0, .6fr); }
+  .wk .day:not(:nth-child(3n+1)) .lh, .wk .day:not(:nth-child(3n+1)) .dg,
+  .wk .day:nth-child(3n) .lh, .wk .day:nth-child(3n) .dg, .wk .day:nth-last-child(2) .lh, .wk .day:nth-last-child(2) .dg { grid-template-columns: 2.7em repeat(5, minmax(0, 1fr)) minmax(0, .6fr) 0; }
+  .wk .day:nth-child(3n) .axr, .wk .day:nth-last-child(2) .axr { display: none; }
+  .wk .day:nth-child(3n) .nowline, .wk .day:nth-last-child(2) .nowline { right: 0; }
   .wk .day:not(:nth-child(3n+1)) .ax, .wk .day:not(:nth-child(3n+1)) .lh span:first-child { visibility: visible; }
   .wk .day:not(:nth-child(3n+1)) .nowline { left: 2.7em; }
   .day { margin-bottom: .8em; }
@@ -205,7 +213,7 @@ body {
 .hell .view { background: #F4F7FC; color: #0B2A5C; }
 .hell .day h3, .hell .platzfig h3, .hell .tt th { border-bottom-color: var(--blue); color: var(--blue); }
 .hell .day.today h3 span, .hell .tt th.today span { background: var(--blue); color: #fff; }
-.hell .lh, .hell .dg .ax, .hell .wkhint, .hell .tt td.n small, .hell .tt .ut .fl { color: #4A5F86; }
+.hell .lh, .hell .dg .ax, .hell .dg .axr, .hell .wkhint, .hell .tt td.n small, .hell .tt .ut .fl { color: #4A5F86; }
 .hell .dg .lane { border-left-color: #C9D5EA; background: repeating-linear-gradient(to bottom, #C9D5EA 0 1px, #fff 1px calc(var(--slot) * 4)); }
 .hell .dg .lane.lb { background-color: #FBEDED; background-blend-mode: multiply; }
 .hell .blk { --edge: rgba(0,0,0,.28); --ew: 1px; }
@@ -562,7 +570,8 @@ function renderWoche(p, now) {
   wk.style.setProperty("--days", tage.length);
   wk.innerHTML = tage.map(tag => {
     let g = '';
-    for (let m = start; m < ende; m += 60) g += '<span class="ax" style="grid-row:' + ((m - start) / 15 + 1) + '">' + hm(m) + '</span>';
+    for (let m = start; m < ende; m += 60) g += '<span class="ax" style="grid-row:' + ((m - start) / 15 + 1) + '">' + hm(m) + '</span>' +
+      '<span class="axr" style="grid-row:' + ((m - start) / 15 + 1) + '">' + hm(m) + '</span>';
     LANES.forEach((l, i) => g += '<span class="lane' + (l === "Laufbahn" ? " lb" : "") + '" style="grid-column:' + (i + 2) + '"></span>');
     // Flächen sammeln; gleiche Mannschaft, zeitlich direkt anschließend und überlappende Bahnen = eine zusammenhängende Fläche
     const segs = [];
@@ -594,7 +603,7 @@ function renderWoche(p, now) {
     }
     if (tag === heute && tNow >= start && tNow < ende && !S.plan) g += '<span class="nowline" style="top:calc(var(--slot) * ' + ((tNow - start) / 15) + ')"></span>';
     return '<section class="day' + (tag === heute ? " today" : "") + '"><h3><span>' + TAGE[tag % 7] + '</span></h3>' +
-      '<div class="lh"><span></span>' + LANEKURZ.map(x => '<span>' + x + '</span>').join("") + '</div>' +
+      '<div class="lh"><span></span>' + LANEKURZ.map(x => '<span>' + x + '</span>').join("") + '<span></span></div>' +
       '<div class="dg" style="--n:' + n + '">' + g + '</div></section>';
   }).join("") + '<section class="platzfig"><h3>Aufteilung Sportplatz</h3>' + platzAufteilung() + '</section>';
 }
