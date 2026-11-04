@@ -151,11 +151,12 @@ body {
   font-family: var(--display); font-weight: 700; line-height: 1.05; border: 0; text-align: center;
   display: flex; flex-direction: column; align-items: center; justify-content: center; }
 /* Einheitliche Schriftgröße in allen Feldern: richtet sich nach der engsten Stelle (schmale Spalte, kurze Laufbahn-Zeit) */
-.blk { font-size: min(.85em, max(.66em, 1.05vw), calc(var(--slot) * 1.05)); }
+.blk { font-size: var(--bfs, min(1.15em, max(.8em, 1.35vw), calc(var(--slot) * 1.45))); }
+.blk .nm { letter-spacing: -.02em; }
 .blk.lbk { padding: 0 1px; line-height: 1; }
 .blk { word-break: normal; overflow-wrap: normal; hyphens: none; }
 .blk .nm { display: block; max-width: 100%; }
-.blk small { display: block; font-family: var(--body); font-weight: 600; font-size: .8em; line-height: 1; margin-top: .1em; letter-spacing: -.02em; }
+.blk small { display: block; font-family: var(--display); font-weight: 600; font-size: .8em; white-space: nowrap; line-height: 1; margin-top: .1em; letter-spacing: -.02em; }
 .blk:focus-visible { outline: 2px solid var(--white); outline-offset: 1px; }
 .blk { --edge: rgba(255,255,255,.75); --ew: 1.5px; --glow: 0 0 0 0 transparent; position: relative;
   box-shadow: inset 0 0 0 var(--ew) var(--edge), var(--glow); }
