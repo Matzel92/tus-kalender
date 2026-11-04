@@ -142,6 +142,7 @@ body {
   display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .blk.s { font-size: .85em; }
 .blk { word-break: normal; overflow-wrap: normal; hyphens: none; }
+.blk .nm { display: block; max-width: 100%; }
 .blk small { display: block; font-family: var(--body); font-weight: 600; font-size: .8em; margin-top: .1em; }
 .blk:focus-visible { outline: 2px solid var(--white); outline-offset: 1px; }
 .blk { --edge: rgba(255,255,255,.75); --ew: 1.5px; --glow: 0 0 0 0 transparent; position: relative;
@@ -152,7 +153,7 @@ body {
 .blk.jt { margin-top: 0 !important; }
 .blk.other { opacity: .18; }
 .blk.mine { --glow: 0 0 0 3px var(--live); }
-.nowline { position: absolute; left: 2.7em; right: 0; height: 0; border-top: 2px solid var(--live); z-index: 0; pointer-events: none; }
+.nowline { position: absolute; left: 2.7em; right: 0; height: 0; border-top: 2px solid var(--live); z-index: 5; pointer-events: none; box-shadow: 0 0 0 1px rgba(255,255,255,.85); }
 .wk .day:not(:nth-child(3n+1)) .nowline { left: 0; }
 .nowline::before { content: ""; position: absolute; left: -4px; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--live); }
 .legende h3 { margin: 0 0 .5em; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid var(--white); }
@@ -583,7 +584,7 @@ function renderWoche(p, now) {
         const unten = gs.some(y => y !== x && y.r1 === x.r2 && y.a <= x.b && x.a <= y.b);
         const meins = S.team && istMeins(u), anders = S.team && !istMeins(u);
         const r = (oben ? "0 0 " : "3px 3px ") + (unten ? "0 0" : "3px 3px");
-        const txt = x === traeger ? esc(u.kurz || u.team).replace(/\//g, "/<wbr>") + ((bis - von) / 15 >= 4 && hoch >= 2 ? '<small>' + hm(von) + '–' + hm(bis) + '</small>' : '') : '';
+        const txt = x === traeger ? '<span class="nm">' + esc(u.kurz || u.team).replace(/\//g, "/<wbr>") + '</span>' + ((bis - von) / 15 >= 4 && hoch >= 2 ? '<small>' + hm(von) + '–' + hm(bis) + '</small>' : '') : '';
         const info = u.team + " · " + TAGE[tag % 7] + " " + hm(von) + "–" + hm(bis) + (gs.length > 1 ? " (" + gs.map(y => y.e.von + "–" + y.e.bis + " " + felderText(y.e.felder)).filter((v, i, a) => a.indexOf(v) === i).join(", ") + ")" : " · " + felderText(u.felder));
         g += '<button type="button" class="blk' + (breit < 2 ? " s" : "") + (anders ? " other" : "") + (meins ? " mine" : "") + (unten ? " jb" : "") + (oben ? " jt" : "") + '" data-team="' + esc(u.mitglieder[0]) + '"' +
           ' style="grid-row:' + x.r1 + '/' + x.r2 + ';grid-column:' + (x.a + 2) + '/' + (x.b + 3) + ';background:' + u.farbe + ';color:' + kontrast(u.farbe) +
