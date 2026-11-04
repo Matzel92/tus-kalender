@@ -642,6 +642,19 @@ function laeufe(felder) {   // zusammenhängende Bahnen, z. B. HL+HR -> eine Fl�
   for (const i of idx) { const l = out[out.length - 1]; if (l && l[1] === i - 1) l[1] = i; else out.push([i, i]); }
   return out;
 }
+// gesamter Zeitraum einer Mannschaft am Tag: direkt aneinander anschließende Einheiten (auch auf anderen Platzteilen)
+function gesamtZeit(tagE, u, von, bis) {
+  const gleich = e => e.team === u.team;
+  let weiter = true;
+  while (weiter) {
+    weiter = false;
+    for (const e of tagE) if (gleich(e)) {
+      if (min(e.bis) === von || (min(e.von) < von && min(e.bis) > von)) { von = min(e.von); weiter = true; }
+      if (min(e.von) === bis || (min(e.bis) > bis && min(e.von) < bis)) { bis = min(e.bis); weiter = true; }
+    }
+  }
+  return [von, bis];
+}
 function renderWoche(p, now) {
   const tage = wochentage(p);
   const vs = p.einheiten.map(e => min(e.von)), bs = p.einheiten.map(e => min(e.bis));
@@ -655,8 +668,8 @@ function renderWoche(p, now) {
     const mitLB = p.einheiten.some(e => e.tag === tag && e.felder.includes("Laufbahn"));   // Laufbahn nur zeigen, wenn dort jemand trainiert
     LANES.forEach((l, i) => { if (l !== "Laufbahn" || mitLB) g += '<span class="lane' + (l === "Laufbahn" ? " lb" : "") + '" style="grid-column:' + (i + 2) + '"></span>'; });
     // Flächen sammeln; gleiche Mannschaft, zeitlich direkt anschließend und überlappende Bahnen = eine zusammenhängende Fläche
-    const segs = [];
-    for (const u of p.einheiten.filter(x => x.tag === tag))
+    const segs = [], tagE = p.einheiten.filter(x => x.tag === tag);
+    for (const u of tagE)
       for (const [a, b] of laeufe(u.felder)) segs.push({ e: u, a, b, r1: (min(u.von) - start) / 15 + 1, r2: (min(u.bis) - start) / 15 + 1 });
     const grp = segs.map((_, i) => i);
     const root = i => grp[i] === i ? i : (grp[i] = root(grp[i]));
@@ -665,7 +678,9 @@ function renderWoche(p, now) {
     const gruppen = {};
     segs.forEach((x, i) => (gruppen[root(i)] = gruppen[root(i)] || []).push(x));
     for (const gs of Object.values(gruppen)) {
-      const von = Math.min(...gs.map(x => min(x.e.von))), bis = Math.max(...gs.map(x => min(x.e.bis)));
+      const von0 = Math.min(...gs.map(x => min(x.e.von))), bis0 = Math.max(...gs.map(x => min(x.e.bis)));
+      // Platzwechsel: immer den gesamten Trainingszeitraum der Mannschaft an diesem Tag angeben (z. B. 19:30–21:30)
+      const kette = gesamtZeit(tagE, gs[0].e, von0, bis0), von = kette[0], bis = kette[1];
       // Beschriftung im obersten Abschnitt; reicht der Platz nicht, läuft sie in den Abschnitt darunter weiter (gleiche Farbe)
       const traeger = gs.reduce((m, x) => x.r1 < m.r1 || (x.r1 === m.r1 && (x.b - x.a) > (m.b - m.a)) ? x : m, gs[0]);
       const felderAlle = [...new Set(gs.flatMap(x => x.e.felder))];
@@ -679,7 +694,7 @@ function renderWoche(p, now) {
         const meins = S.team && istMeins(u), anders = S.team && !istMeins(u);
         const r = (oben ? "0 0 " : "3px 3px ") + (unten ? "0 0" : "3px 3px");
         const lb = x.a === LANES.indexOf("Laufbahn");   // schmale Laufbahn: Zeiten untereinander
-        const zeit = lb ? '<small class="zt">' + hm(von) + '–<wbr>' + hm(bis) + '</small>' : ((bis - von) / 15 >= 4 && hoch >= 2 ? '<small>' + hm(von) + '–<wbr>' + hm(bis) + '</small>' : '');
+        const zeit = lb ? '<small class="zt">' + hm(von) + '–<wbr>' + hm(bis) + '</small>' : ((bis0 - von0) / 15 >= 4 && hoch >= 2 ? '<small>' + hm(von) + '–<wbr>' + hm(bis) + '</small>' : '');
         const txt = x === traeger ? '<span class="nm">' + esc(u.kurz || u.team).replace(/\//g, "/<wbr>").replace(/fußball/gi, m => m.slice(0, 3) + "&shy;" + m.slice(3)) + '</span>' + zeit : '';
         const info = u.team + " · " + TAGE[tag % 7] + " " + hm(von) + "–" + hm(bis) + (gs.length > 1 ? " (" + gs.map(y => y.e.von + "–" + y.e.bis + " " + felderText(y.e.felder)).filter((v, i, a) => a.indexOf(v) === i).join(", ") + ")" : " · " + felderText(u.felder));
         g += '<button type="button" class="blk' + (breit < 2 ? " s" : "") + (lb ? " lbk" : "") + (x === traeger && unten ? " ueber" : "") + (anders ? " other" : "") + (meins ? " mine" : "") + (unten ? " jb" : "") + (oben ? " jt" : "") + (untenVoll ? " gb0" : "") + (obenVoll ? " gt0" : "") + '" data-team="' + esc(u.mitglieder[0]) + '"' +
