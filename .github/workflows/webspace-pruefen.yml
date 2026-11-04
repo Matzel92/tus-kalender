@@ -26,7 +26,7 @@ jobs:
         run: |
           case "$ORDNER" in *..*|/*) echo "::error::Nur Pfade innerhalb von /matz_dinge erlaubt"; exit 1;; esac
           V="set sftp:auto-confirm yes; set net:timeout 30;"
-          INHALT=$(lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "$V cls -1a $ORDNER/; bye" | grep -vE '(^|/)\.\.?/?$' || true)
+          INHALT=$(lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "$V cls -1a $ORDNER/; bye" | tr -d '\r' | grep -vE '(^|/)\.\.?/?$' | grep -v '^[[:space:]]*$' || true)
           echo "Inhalt von $ORDNER:"; echo "$INHALT"
           if [ -n "$INHALT" ]; then echo "::error::$ORDNER ist nicht leer – wird nicht entfernt."; exit 1; fi
           lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "$V rm -r $ORDNER; bye"
