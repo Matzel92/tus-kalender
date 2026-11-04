@@ -265,6 +265,9 @@ body {
   .tabs .ctl select { min-width: 0; padding-left: .4em; padding-right: .4em; }
   .tabs #team { flex: 1 1 0; width: 0; max-width: none; }
   .tabs #plan { flex: 0 0 auto; }
+  /* Reiter in einer Zeile, gleich breit */
+  .tablist { flex: 1 1 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: .3em; }
+  .tablist button { font-size: clamp(11px, 3.6vw, 15px); letter-spacing: 0; padding: .4em .1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
 .hint { color: var(--white); background: var(--blue-row); padding: .1em .6em; border-radius: 3px; }
 :fullscreen .ctl.full { display: none; }
