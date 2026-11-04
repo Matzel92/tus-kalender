@@ -153,7 +153,7 @@ body {
   font-family: var(--display); font-weight: 700; line-height: 1.05; border: 0; text-align: center;
   display: flex; flex-direction: column; align-items: center; justify-content: center; }
 /* Einheitliche Schriftgröße in allen Feldern: richtet sich nach der engsten Stelle (schmale Spalte, kurze Laufbahn-Zeit) */
-.blk { font-size: calc(var(--bfs, min(1.4em, max(.8em, 1.3vw), calc(var(--slot) * 1.7))) * var(--bk, 1)); }   /* --bk: wird per Skript verkleinert, falls sonst etwas abgeschnitten würde */
+.blk { font-size: calc(var(--slot) * var(--bk, 1.5)); }   /* --bk: per Skript so groß wie möglich gewählt, ohne dass irgendwo etwas abgeschnitten wird */
 .blk .nm { letter-spacing: -.02em; hyphens: manual; -webkit-hyphens: manual; }
 .blk.lbk { padding: 0 1px; line-height: 1; }
 .blk.lbk small { font-size: .66em; margin-top: 0; }   /* Laufbahn-Spalte ist schmal: nur die Uhrzeit etwas kleiner */
@@ -296,7 +296,6 @@ body {
   .tabs .ctl select { min-width: 0; padding-left: .4em; padding-right: .4em; }
   .tabs #team { flex: 1 1 0; width: 0; max-width: none; }
   .tabs #plan { flex: 0 0 auto; }
-  .blk { --bfs: 1.15em; }   /* Handy: große Schrift; wird bei Platzmangel automatisch für alle Felder gemeinsam verkleinert */
   /* Reiter in einer Zeile, gleich breit */
   .tablist { flex: 1 1 100%; display: flex; flex-wrap: nowrap; gap: .3em; }
   .tablist button[hidden] { display: none; }
@@ -737,7 +736,8 @@ function passePlatzfigAn() {
   const r = svg.getBoundingClientRect();
   if (r.width > 0 && r.height > 0) svg.outerHTML = platzAufteilung(r.width / r.height);
 }
-// Schrift in allen Feldern gemeinsam so weit verkleinern, dass kein Name und keine Uhrzeit abgeschnitten wird
+// Schrift in allen Feldern gemeinsam so groß wie möglich wählen, ohne dass ein Name oder eine Uhrzeit abgeschnitten wird
+// (wächst mit der Bildschirmgröße, bleibt in allen Feldern gleich)
 function passeSchriftAn() {
   const wk = document.getElementById("wk");
   if (!wk || document.getElementById("viewWoche").hidden) return;
@@ -747,9 +747,12 @@ function passeSchriftAn() {
     return (nm && nm.scrollWidth > nm.clientWidth) || (sm && sm.scrollWidth > sm.clientWidth) ||
       (!e.classList.contains("ueber") && e.scrollHeight > e.clientHeight + 1);
   });
-  let k = 1;
-  wk.style.setProperty("--bk", k);
-  while (k > .6 && zuEng()) { k = Math.round((k - .03) * 100) / 100; wk.style.setProperty("--bk", k); }
+  const setze = k => wk.style.setProperty("--bk", k);
+  let lo = .6, hi = 2.6;
+  setze(hi);
+  if (!zuEng()) return;
+  for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; setze(m); if (zuEng()) hi = m; else lo = m; }
+  setze(lo);
 }
 window.addEventListener("resize", () => { clearTimeout(window._pf); window._pf = setTimeout(() => { passePlatzfigAn(); passeSchriftAn(); }, 150); });
 
