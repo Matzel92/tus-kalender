@@ -37,7 +37,7 @@ jobs:
           OK: ${{ inputs.bestaetigung }}
         run: |
           case "$ORDNER" in ""|.|./|*..*|/*) echo "::error::Nur Unterordner innerhalb von /matz_dinge erlaubt"; exit 1;; esac
-          case "$ORDNER" in kalender|kalender/|trainingsplan|trainingsplan/|Spiele|Spiele/) echo "::error::Projektordner werden nicht gelöscht"; exit 1;; esac
+          case "$ORDNER" in kalender|kalender/|trainingsplan|trainingsplan/|spiele|spiele/) echo "::error::Projektordner werden nicht gelöscht"; exit 1;; esac
           [ "$OK" = "LOESCHEN" ] || { echo "::error::Bestätigung fehlt (LOESCHEN)"; exit 1; }
           lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "$V rm -r $ORDNER; bye"
           echo "Gelöscht: /matz_dinge/$ORDNER"

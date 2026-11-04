@@ -8,8 +8,8 @@
 # Optionale Variable (Settings -> Secrets and variables -> Actions -> Variables):
 #   ZIEL_ORDNER    Unterordner im Startordner des SFTP-Benutzers, z. B. kalender
 #                  (fehlt sie, wird direkt in den Startordner hochgeladen)
-#   ANZEIGE_ORDNER Ordner für die Anzeigetafel im Startordner, Standard: Spiele
-#                  (spiele.tus-harpen.de zeigt auf /matz_dinge/Spiele)
+#   ANZEIGE_ORDNER Ordner für die Anzeigetafel im Startordner, Standard: spiele
+#                  (spiele.tus-harpen.de zeigt auf /matz_dinge/spiele)
 
 name: Spielplan auf IONOS aktualisieren
 
@@ -90,7 +90,7 @@ jobs:
           SFTP_USER: ${{ secrets.SFTP_USER }}
           LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
           # Ordner im Startordner /matz_dinge; Groß-/Kleinschreibung beachten
-          ORDNER: ${{ vars.ANZEIGE_ORDNER || 'Spiele' }}
+          ORDNER: ${{ vars.ANZEIGE_ORDNER || 'spiele' }}
         run: |
           # .htaccess für die Anzeige: immer frische Daten, Spieldaten auch von anderen Seiten abrufbar
           cat > spiele.htaccess <<'HT'
