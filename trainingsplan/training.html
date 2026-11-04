@@ -147,13 +147,14 @@ body {
 .axg span { font-size: .72em; color: var(--muted); line-height: 1; transform: translateY(-.45em); white-space: nowrap; }
 .axcol.l .axg span { text-align: right; }
 .axcol.r .axg span { text-align: left; }
-.blk { margin: 1px; border-radius: 3px; padding: .12em .25em; overflow: hidden; cursor: pointer; z-index: 1;
+.blk { margin: 1px; border-radius: 3px; padding: 0 .2em; overflow: hidden; cursor: pointer; z-index: 1;
   font-family: var(--display); font-weight: 700; line-height: 1.05; border: 0; text-align: center;
   display: flex; flex-direction: column; align-items: center; justify-content: center; }
 /* Einheitliche Schriftgröße in allen Feldern: richtet sich nach der engsten Stelle (schmale Spalte, kurze Laufbahn-Zeit) */
-.blk { font-size: var(--bfs, min(1.15em, max(.8em, 1.35vw), calc(var(--slot) * 1.45))); }
+.blk { font-size: var(--bfs, min(1.4em, max(.8em, 1.3vw), calc(var(--slot) * 1.7))); }
 .blk .nm { letter-spacing: -.02em; }
 .blk.lbk { padding: 0 1px; line-height: 1; }
+.blk.lbk small { font-size: .66em; margin-top: 0; }   /* Laufbahn-Spalte ist schmal: nur die Uhrzeit etwas kleiner */
 .blk { word-break: normal; overflow-wrap: normal; hyphens: none; }
 .blk .nm { display: block; max-width: 100%; }
 .blk small { display: block; font-family: var(--display); font-weight: 600; font-size: .8em; white-space: nowrap; line-height: 1; margin-top: .1em; letter-spacing: -.02em; }
@@ -291,6 +292,7 @@ body {
   .tabs .ctl select { min-width: 0; padding-left: .4em; padding-right: .4em; }
   .tabs #team { flex: 1 1 0; width: 0; max-width: none; }
   .tabs #plan { flex: 0 0 auto; }
+  .blk { --bfs: .9em; }
   /* Reiter in einer Zeile, gleich breit */
   .tablist { flex: 1 1 100%; display: flex; flex-wrap: nowrap; gap: .3em; }
   .tablist button[hidden] { display: none; }
