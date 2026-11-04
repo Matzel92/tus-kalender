@@ -28,7 +28,7 @@ body {
   font-family: var(--body); font-size: clamp(15px, 1.05vw, 22px);
   font-variant-numeric: tabular-nums;
 }
-.board { box-sizing: border-box; min-height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.board { box-sizing: border-box; min-height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); }
 .pad { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 @media (min-width: 1200px) { .pad { padding-left: max(2vw, env(safe-area-inset-left, 0px)); padding-right: max(2vw, env(safe-area-inset-right, 0px)); } }
 
@@ -257,6 +257,15 @@ body {
 .ctl { display: flex; gap: .4em; flex-wrap: wrap; align-items: center; }
 .ctl select { background: var(--blue-deep); flex: none; width: auto; max-width: 16em; }
 .ctl label { color: var(--muted); }
+/* Handy: Mannschaft und Plan in einer Zeile nebeneinander */
+@media (max-width: 600px) {
+  .tabs .spacer { display: none; }
+  .tabs .ctl { flex: 1 1 100%; flex-wrap: nowrap; min-width: 0; }
+  .tabs .ctl label { font-size: .85em; white-space: nowrap; }
+  .tabs .ctl select { min-width: 0; padding-left: .4em; padding-right: .4em; }
+  .tabs #team { flex: 1 1 0; width: 0; max-width: none; }
+  .tabs #plan { flex: 0 0 auto; }
+}
 .hint { color: var(--white); background: var(--blue-row); padding: .1em .6em; border-radius: 3px; }
 :fullscreen .ctl.full { display: none; }
 
