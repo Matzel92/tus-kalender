@@ -129,17 +129,18 @@ def main():
             einheiten.append(dict(tag=tag, team=name, kurz=kurz,
                                   felder=list(f), von=v, bis=b, farbe=ti["farbe"], text=ti["text"], mitglieder=mitgl))
         einheiten.sort(key=lambda e: (e["tag"], e["von"], FELDER.index(e["felder"][0])))
+        # Halle: jede Mannschaft eine eigene Zeile (auch bei gleicher Zeit und Halle)
         hg = {}
         for (p, team, tag, v, b, ort) in halle_roh:
             if p and p != pname: continue
-            hg.setdefault((tag, v, b, ort), []).append(team)
+            hg.setdefault((tag, v, b, ort, team), []).append(team)
         halle = []
-        for (tag, v, b, ort), mitgl in hg.items():
+        for (tag, v, b, ort, _), mitgl in hg.items():
             mitgl = sorted(set(mitgl), key=lambda n: order.get(n, 999))
             ti = tinfo.get(mitgl[0], dict(farbe="#BFBFBF", text="#000000"))
             halle.append(dict(tag=tag, von=v, bis=b, ort=ort, team=" & ".join(mitgl),
                               kurz="/".join(tinfo.get(m, {}).get("kurz", m) for m in mitgl), farbe=ti["farbe"], mitglieder=mitgl))
-        halle.sort(key=lambda h: (h["tag"], h["von"], h["ort"]))
+        halle.sort(key=lambda h: (h["tag"], h["von"], h["ort"], order.get(h["team"], 999)))
         out.append(dict(blatt=pname, titel=pinfo["titel"], saison=pname, gueltig=sorted(pinfo["gueltig"]),
                         gueltigText="gültig " + " und ".join("vom %s bis %s" % (date.fromisoformat(x).strftime("%d.%m.%Y"), date.fromisoformat(y).strftime("%d.%m.%Y")) for x, y in sorted(pinfo["gueltig"])),
                         einheiten=einheiten, halle=halle))
