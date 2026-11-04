@@ -36,19 +36,21 @@ body {
 .top {
   background: var(--white); color: var(--blue);
   display: flex; align-items: center; gap: clamp(12px, 1.6vw, 32px); flex-wrap: wrap;
-  padding-block: clamp(6px, .55vw, 12px);
-  border-bottom: clamp(4px, .35vw, 7px) solid var(--blue);
+  padding-block: clamp(4px, .35vw, 8px);
+  border-bottom: clamp(3px, .3vw, 6px) solid var(--blue);
 }
-.logo { flex: none; width: clamp(44px, 3.9vw, 80px); height: clamp(44px, 3.9vw, 80px); display: grid; place-items: center; }
+.logo { flex: none; width: clamp(36px, 2.9vw, 58px); height: clamp(36px, 2.9vw, 58px); display: grid; place-items: center; }
 .logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .club { min-width: 0; flex: 1 1 11em; }
-.club h1 { margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(24px, 2.2vw, 46px); line-height: 1; letter-spacing: .01em; text-wrap: balance; }
+.club .titelzeile { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 .6em; }
+.club h1 { margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(21px, 1.8vw, 36px); line-height: 1.05; letter-spacing: .01em; white-space: nowrap; }
+.club .sub { font-family: var(--display); font-weight: 600; font-size: clamp(15px, 1.25vw, 25px); letter-spacing: .04em; text-transform: uppercase; color: var(--blue-row); line-height: 1.05; }
 .club p { margin: .2em 0 0; color: var(--blue-row); font-weight: 600; font-size: .8em; letter-spacing: .1em; text-transform: uppercase; }
-.club p.gueltig { text-transform: none; letter-spacing: .01em; font-size: .9em; color: var(--blue); display: flex; flex-wrap: wrap; gap: .2em .5em; align-items: baseline; }
+.club p.gueltig { margin-top: .1em; text-transform: none; letter-spacing: .01em; font-size: .88em; color: var(--blue); display: flex; flex-wrap: wrap; gap: .2em .5em; align-items: baseline; }
 .club p.gueltig .warn { background: #FFE08A; color: #5A4200; padding: 0 .4em; border-radius: 3px; font-size: .9em; }
 .clock { display: flex; align-items: baseline; justify-content: flex-end; gap: .6em; flex-wrap: wrap; text-align: right; }
-.clock .time { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 3.1vw, 66px); line-height: 1; color: var(--blue); }
-.clock .date { order: -1; color: var(--blue-row); font-weight: 600; font-size: 1.15em; }
+.clock .time { font-family: var(--display); font-weight: 700; font-size: clamp(24px, 2.3vw, 46px); line-height: 1; color: var(--blue); }
+.clock .date { order: -1; color: var(--blue-row); font-weight: 600; font-size: 1.05em; }
 
 /* Hauptbereich */
 .main { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(14px, 1.8vw, 36px); min-height: 0; padding-block: clamp(10px, .9vw, 18px); }
@@ -301,7 +303,17 @@ body {
 .hint { color: var(--white); background: var(--blue-row); padding: .1em .6em; border-radius: 3px; }
 :fullscreen .ctl.full { display: none; }
 
-@media (max-width: 600px) { .clock { flex: 1 1 100%; justify-content: flex-start; text-align: left; } .clock .date { font-size: 1em; } }
+@media (max-width: 600px) {
+  /* Handy: Kopf kompakt – Uhrzeit rechts neben dem Titel, Datum ausgeblendet */
+  .top { flex-wrap: nowrap; gap: 10px; }
+  .club { flex: 1 1 auto; }
+  .club .sub { font-size: clamp(11px, 3.35vw, 13px); letter-spacing: .02em; }
+  .club p.gueltig { font-size: clamp(10.5px, 3.1vw, 12px); }
+  .club h1 { font-size: clamp(19px, 5.8vw, 22px); }
+  .clock { flex: none; }
+  .clock .date { display: none; }
+  .clock .time { font-size: clamp(19px, 6vw, 24px); }
+}
 @media (max-width: 900px) {
   .main { grid-template-columns: minmax(0, 1fr); }
   #pitch { max-height: none; }
@@ -313,8 +325,7 @@ body {
   <header class="top pad">
     <div class="logo"><img id="logoImg" src="__LOGO__" alt="Vereinslogo TuS Harpen 08/11"></div>
     <div class="club">
-      <h1>TuS Harpen 08/11</h1>
-      <p id="sub">Trainingsplan</p>
+      <div class="titelzeile"><h1>TuS Harpen 08/11</h1><span class="sub" id="sub">Trainingsplan</span></div>
       <p class="gueltig" id="gueltig"></p>
     </div>
     <div class="clock">
