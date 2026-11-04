@@ -586,7 +586,7 @@ function zeigeLogo(src) {
 (function () {
   const tag = new Date().toISOString().slice(0, 10);
   const img = document.getElementById("logoImg");
-  img.onerror = () => { img.onerror = null; zeigeLogo("https://kalender.tus-harpen.de/logo.png?" + tag); };
+  img.onerror = () => { img.onerror = null; zeigeLogo("https://spiele.tus-harpen.de/logo.png?" + tag); };
   zeigeLogo("logo.png?" + tag);
 })();
 
