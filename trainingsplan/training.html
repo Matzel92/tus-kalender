@@ -861,7 +861,11 @@ function stil(h) {
   document.querySelector(".board").classList.toggle("hell", h);
   const b = document.getElementById("btnStil"); b.textContent = h ? "Dunkle Ansicht" : "Helle Ansicht"; b.setAttribute("aria-pressed", "false");
 }
-document.getElementById("btnStil").addEventListener("click", () => stil(!document.querySelector(".board").classList.contains("hell")));
+// Standard nach Uhrzeit: 6–22 Uhr hell, 22–6 Uhr dunkel. Per Knopf oder ?stil=hell/dunkel fest eingestellt.
+let stilFest = false;
+const stilNachZeit = () => { const h = new Date().getHours(); return h >= 6 && h < 22; };
+function stilAuto() { if (!stilFest) { const h = stilNachZeit(); if (h !== document.querySelector(".board").classList.contains("hell")) stil(h); } }
+document.getElementById("btnStil").addEventListener("click", () => { stilFest = true; stil(!document.querySelector(".board").classList.contains("hell")); });
 document.getElementById("btnFull").addEventListener("click", () => {
   const el = document.documentElement;
   try { if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen().catch(() => {}); } catch (e) {}
@@ -875,12 +879,13 @@ function merken() { try { localStorage.setItem("tp-team", S.team); } catch (e) {
   try { const q = new URLSearchParams(location.search); if (q.get("team")) S.team = q.get("team"); if (ANSICHTEN.includes(q.get("ansicht"))) S.ansicht = q.get("ansicht"); } catch (e) {}
   if (ANSICHTEN.includes(location.hash.slice(1))) S.ansicht = location.hash.slice(1);
   if (!S.team) { try { S.team = localStorage.getItem("tp-team") || ""; } catch (e) {} }
-  let hell = true;   // beim Aufruf immer hell; nur ?stil=dunkel (Fernseher im Vereinsheim) startet dunkel
-  try { const q = new URLSearchParams(location.search).get("stil"); if (q) hell = q === "hell"; } catch (e) {}
+  let hell = stilNachZeit();   // 6–22 Uhr hell, sonst dunkel; ?stil=hell oder ?stil=dunkel legt die Ansicht fest
+  try { const q = new URLSearchParams(location.search).get("stil"); if (q) { hell = q === "hell"; stilFest = true; } } catch (e) {}
   stil(hell);
   window.addEventListener("hashchange", () => { if (ANSICHTEN.includes(location.hash.slice(1))) { S.ansicht = location.hash.slice(1); render(); } });
   fuelleAuswahl();
   render();
+  setInterval(stilAuto, 20000);
   setInterval(() => { if ((S.tag === null && S.zeit === null) || S.ansicht !== "platz") render(); else document.getElementById("time").textContent = hm(new Date().getHours() * 60 + new Date().getMinutes()); }, 20000);
   // auf dem Webspace: aktuelle Daten nachladen (Änderungen an der Excel-Datei erscheinen ohne Neuladen)
   async function nachladen() {
