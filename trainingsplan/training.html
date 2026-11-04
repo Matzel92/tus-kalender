@@ -134,6 +134,7 @@ body {
 .day h3 { margin: 0; line-height: 1.1; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid var(--white); }
 .day.today h3 span { background: var(--white); color: var(--blue); padding: 0 .3em; }
 .lh, .dg { display: grid; grid-template-columns: 0 repeat(5, minmax(0, 1fr)) minmax(0, .85fr); }
+.day.ohne-lb .lh, .day.ohne-lb .dg { grid-template-columns: 0 repeat(5, minmax(0, 1fr)); }
 .lh { color: var(--muted); padding: .2em 0; }
 .lh span { font-size: .72em; font-weight: 600; letter-spacing: .04em; text-align: center; white-space: nowrap; overflow: hidden; }
 .dg { grid-template-rows: repeat(var(--n), var(--slot)); position: relative; }
@@ -219,6 +220,7 @@ body {
   .axcol { display: none; }
   .wk .rest { display: block; grid-column: auto !important; }
   .lh, .dg { grid-template-columns: 2.7em repeat(5, minmax(0, 1fr)) minmax(0, .85fr); }
+  .day.ohne-lb .lh, .day.ohne-lb .dg { grid-template-columns: 2.7em repeat(5, minmax(0, 1fr)); }
   .dg .ax { display: block; }
   .nowline { left: 2.7em; }
             .day { margin-bottom: .8em; }
@@ -294,7 +296,7 @@ body {
   .tabs .ctl select { min-width: 0; padding-left: .4em; padding-right: .4em; }
   .tabs #team { flex: 1 1 0; width: 0; max-width: none; }
   .tabs #plan { flex: 0 0 auto; }
-  .blk { --bfs: .9em; }
+  .blk { --bfs: 1.15em; }   /* Handy: große Schrift; wird bei Platzmangel automatisch für alle Felder gemeinsam verkleinert */
   /* Reiter in einer Zeile, gleich breit */
   .tablist { flex: 1 1 100%; display: flex; flex-wrap: nowrap; gap: .3em; }
   .tablist button[hidden] { display: none; }
@@ -647,7 +649,8 @@ function renderWoche(p, now) {
   const kacheln = tage.map(tag => {
     let g = '';
     for (let m = start; m < ende; m += 60) g += '<span class="ax" style="grid-row:' + ((m - start) / 15 + 1) + '">' + hm(m) + '</span>';
-    LANES.forEach((l, i) => g += '<span class="lane' + (l === "Laufbahn" ? " lb" : "") + '" style="grid-column:' + (i + 2) + '"></span>');
+    const mitLB = p.einheiten.some(e => e.tag === tag && e.felder.includes("Laufbahn"));   // Laufbahn nur zeigen, wenn dort jemand trainiert
+    LANES.forEach((l, i) => { if (l !== "Laufbahn" || mitLB) g += '<span class="lane' + (l === "Laufbahn" ? " lb" : "") + '" style="grid-column:' + (i + 2) + '"></span>'; });
     // Flächen sammeln; gleiche Mannschaft, zeitlich direkt anschließend und überlappende Bahnen = eine zusammenhängende Fläche
     const segs = [];
     for (const u of p.einheiten.filter(x => x.tag === tag))
@@ -680,8 +683,8 @@ function renderWoche(p, now) {
       }
     }
     if (tag === heute && tNow >= start && tNow < ende && !S.plan) g += '<span class="nowline" style="top:calc(var(--slot) * ' + ((tNow - start) / 15) + ')"></span>';
-    return '<section class="day' + (tag === heute ? " today" : "") + '"><h3><span>' + TAGE[tag % 7] + '</span></h3>' +
-      '<div class="lh"><span></span>' + LANEKURZ.map(x => '<span>' + x + '</span>').join("") + '<span></span></div>' +
+    return '<section class="day' + (tag === heute ? " today" : "") + (mitLB ? "" : " ohne-lb") + '"><h3><span>' + TAGE[tag % 7] + '</span></h3>' +
+      '<div class="lh"><span></span>' + LANEKURZ.filter(x => x !== "LB" || mitLB).map(x => '<span>' + x + '</span>').join("") + '<span></span></div>' +
       '<div class="dg" style="--n:' + n + '">' + g + '</div></section>';
   });
   const platz = '<section class="platzfig"><h3>Aufteilung Sportplatz</h3>' + platzAufteilung() + '</section>';
