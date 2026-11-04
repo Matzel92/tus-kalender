@@ -101,6 +101,16 @@ def main():
                     fehler.append(f"Halle: {team} unvollständig"); continue
                 halle_roh.append((str(p).strip() if p else None, str(team).strip(), KT[str(tg).strip()[:2]], v, b, str(ort).strip()))
     order = {t["name"]: i for i, t in enumerate(teams)}
+
+    def aufsteigend(mitgl):
+        """Nur für die Beschriftung: gemeinsame Mannschaften eines Jahrgangs aufsteigend nummeriert (E1/E2/E3).
+        Die Reihenfolge der Mannschaften untereinander (Tabellen, Farben) bleibt unverändert."""
+        def jahrgang(m): return re.sub(r"\d+", "", tinfo.get(m, {}).get("kurz", m)).strip()
+        def nummer(m):
+            z = re.search(r"\d+", tinfo.get(m, {}).get("kurz", m)); return int(z.group()) if z else 0
+        erst = {}
+        for i, m in enumerate(mitgl): erst.setdefault(jahrgang(m), i)
+        return sorted(mitgl, key=lambda m: (erst[jahrgang(m)], nummer(m)))
     out = []
     for pname, pinfo in plaene.items():
         # gleiche Mannschaft, gleicher Tag und gleiche Zeit auf mehreren Platzteilen -> eine Einheit (z. B. HR + nur im Winter HL)
@@ -121,7 +131,8 @@ def main():
         for (tag, v, b, f), mitgl in grp.items():
             mitgl = sorted(set(mitgl), key=lambda n: order.get(n, 999))
             ti = tinfo.get(mitgl[0], dict(farbe="#BFBFBF", text="#000000", kurz=mitgl[0]))
-            name, kurz = " & ".join(mitgl), "/".join(tinfo.get(m, {}).get("kurz", m) for m in mitgl)
+            anz = aufsteigend(mitgl)
+            name, kurz = " & ".join(anz), "/".join(tinfo.get(m, {}).get("kurz", m) for m in anz)
             # mehrere nummerierte Mannschaften einer Abteilung gemeinsam (1. Damen + 2. Damen) -> "Damen"
             rest = {re.sub(r"^\d+\.\s*", "", m) for m in mitgl}
             if len(mitgl) > 1 and len(rest) == 1 and all(re.match(r"^\d+\.\s*", m) for m in mitgl):
@@ -140,8 +151,9 @@ def main():
         for (tag, v, b, ort, _), mitgl in hg.items():
             mitgl = sorted(set(mitgl), key=lambda n: order.get(n, 999))
             ti = tinfo.get(mitgl[0], dict(farbe="#BFBFBF", text="#000000"))
-            halle.append(dict(tag=tag, von=v, bis=b, ort=ort, team=" & ".join(mitgl),
-                              kurz="/".join(tinfo.get(m, {}).get("kurz", m) for m in mitgl), farbe=ti["farbe"], mitglieder=mitgl))
+            anz = aufsteigend(mitgl)
+            halle.append(dict(tag=tag, von=v, bis=b, ort=ort, team=" & ".join(anz),
+                              kurz="/".join(tinfo.get(m, {}).get("kurz", m) for m in anz), farbe=ti["farbe"], mitglieder=mitgl))
         halle.sort(key=lambda h: (h["tag"], h["von"], h["ort"], order.get(h["mitglieder"][0], 999)))
         out.append(dict(blatt=pname, titel=pinfo["titel"], saison=pname, gueltig=sorted(pinfo["gueltig"]),
                         gueltigText="gültig " + " und ".join("vom %s bis %s" % (date.fromisoformat(x).strftime("%d.%m.%Y"), date.fromisoformat(y).strftime("%d.%m.%Y")) for x, y in sorted(pinfo["gueltig"])),
