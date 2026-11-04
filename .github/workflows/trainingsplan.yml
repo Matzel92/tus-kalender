@@ -1,0 +1,70 @@
+# Ablage im Repository unter:  .github/workflows/trainingsplan.yml
+#
+# Baut aus trainingsplan/Trainingszeiten.xlsx die Seite https://trainingsplan.tus-harpen.de
+# und lädt sie per SFTP in den Unterordner "trainingsplan" (Startordner des SFTP-Benutzers: /matz_dinge).
+#
+# Nutzt dieselben Secrets wie der Kalender: SFTP_HOST, SFTP_USER, SFTP_PASSWORD
+# Optionale Variable: TRAININGSPLAN_ORDNER (Standard: trainingsplan)
+
+name: Trainingsplan auf IONOS aktualisieren
+
+on:
+  workflow_dispatch:               # manuell startbar (Actions -> Run workflow)
+  push:                            # nach jeder Änderung an der Excel-Datei oder der Seite sofort neu veröffentlichen
+    branches: [main]
+    paths:
+      - "trainingsplan/**"
+      - "logo.png"
+      - ".github/workflows/trainingsplan.yml"
+
+concurrency:
+  group: kalender                  # nicht gleichzeitig mit dem Kalender-Upload (gleicher SFTP-Zugang)
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Pakete installieren
+        run: |
+          pip install -q openpyxl
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lftp
+
+      - name: Excel auslesen und Seite bauen
+        working-directory: trainingsplan
+        run: |
+          mkdir -p ../site
+          python trainingszeiten_json.py Trainingszeiten.xlsx --out ../site/trainingsplan.json
+          python seite_bauen.py --daten ../site/trainingsplan.json --out ../site/index.html
+          cp ../logo.png ../site/logo.png
+          # Seite und Daten nicht lange zwischenspeichern, damit Änderungen sofort sichtbar sind
+          printf '<IfModule mod_headers.c>\n<FilesMatch "\\.(html|json)$">\nHeader set Cache-Control "no-cache"\n</FilesMatch>\n</IfModule>\n' > ../site/.htaccess
+          ls -l ../site
+
+      - name: Auf IONOS hochladen
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          ORDNER: ${{ vars.TRAININGSPLAN_ORDNER || 'trainingsplan' }}
+        working-directory: site
+        run: |
+          lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "
+            set sftp:auto-confirm yes;
+            set net:max-retries 2;
+            set net:timeout 30;
+            mkdir -p -f $ORDNER;
+            cd $ORDNER;
+            put trainingsplan.json;
+            put index.html;
+            put logo.png;
+            put .htaccess;
+            bye"

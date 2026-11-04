@@ -1,0 +1,713 @@
+<title>TuS Harpen Trainingsplan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: wie die Spiele-Anzeige – weiße Kopfleiste mit Wappen, vereinsblaue Tafel.
+   Links die Platzgrafik mit der Belegung zur gewählten Zeit, rechts der Tagesablauf; umschaltbar auf Wochenübersicht.
+   Bewusst ein festes Erscheinungsbild in Blau/Weiß (Fernseher im Vereinsheim, Homepage, Handy). */
+:root {
+  --blue: #0B3D91;        /* Vereinsblau */
+  --blue-deep: #082D6E;   /* Tafelgrund */
+  --blue-row: #0F4AA6;    /* abgesetzte Flächen */
+  --line: #2A5AAE;
+  --white: #FFFFFF;
+  --muted: #BCD0EF;
+  --dim: #7E9CCB;
+  --live: #5BE39A;
+  --grass: #0E9F45;
+  --grass-line: rgba(255,255,255,.85);
+  --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body: "Barlow", "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--blue-deep); color: var(--white);
+  font-family: var(--body); font-size: clamp(15px, 1.05vw, 22px);
+  font-variant-numeric: tabular-nums;
+}
+.board { box-sizing: border-box; min-height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.pad { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+@media (min-width: 1200px) { .pad { padding-left: max(2vw, env(safe-area-inset-left, 0px)); padding-right: max(2vw, env(safe-area-inset-right, 0px)); } }
+
+/* Kopfleiste */
+.top {
+  background: var(--white); color: var(--blue);
+  display: flex; align-items: center; gap: clamp(12px, 1.6vw, 32px); flex-wrap: wrap;
+  padding-block: clamp(6px, .55vw, 12px);
+  border-bottom: clamp(4px, .35vw, 7px) solid var(--blue);
+}
+.logo { flex: none; width: clamp(44px, 3.9vw, 80px); height: clamp(44px, 3.9vw, 80px); display: grid; place-items: center; }
+.logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.club { min-width: 0; flex: 1 1 11em; }
+.club h1 { margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(24px, 2.2vw, 46px); line-height: 1; letter-spacing: .01em; text-wrap: balance; }
+.club p { margin: .2em 0 0; color: var(--blue-row); font-weight: 600; font-size: .8em; letter-spacing: .1em; text-transform: uppercase; }
+.clock { display: flex; align-items: baseline; justify-content: flex-end; gap: .6em; flex-wrap: wrap; text-align: right; }
+.clock .time { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 3.1vw, 66px); line-height: 1; color: var(--blue); }
+.clock .date { order: -1; color: var(--blue-row); font-weight: 600; font-size: 1.15em; }
+
+/* Hauptbereich */
+.main { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(14px, 1.8vw, 36px); min-height: 0; padding-block: clamp(10px, .9vw, 18px); }
+.col { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: .6em; }
+.col h2 {
+  margin: 0; display: flex; align-items: baseline; gap: .6em; flex-wrap: wrap;
+  font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+  font-size: clamp(16px, 1.35vw, 30px); padding-bottom: .3em; border-bottom: 3px solid var(--white);
+}
+.col h2 .when { background: var(--white); color: var(--blue); padding: 0 .35em; }
+.col h2 .count { margin-left: auto; color: var(--muted); font-family: var(--body); font-weight: 500; font-size: .55em; letter-spacing: .08em; }
+
+/* Tag- und Zeitwahl über der Platzgrafik */
+.pick { display: flex; flex-wrap: wrap; gap: .4em; align-items: center; }
+.pick button, .ctl button, .ctl select {
+  font: inherit; font-size: .9em; color: var(--white); background: transparent; border: 1px solid var(--line);
+  padding: .28em .75em; border-radius: 4px; cursor: pointer;
+}
+.pick button[aria-pressed="true"], .ctl button[aria-pressed="true"] { color: var(--blue); background: var(--white); border-color: var(--white); }
+.pick button.now { border-color: var(--live); color: var(--live); }
+.pick button.now[aria-pressed="true"] { background: var(--live); color: var(--blue-deep); border-color: var(--live); }
+.pick button:focus-visible, .ctl button:focus-visible, .ctl select:focus-visible, .slider input:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
+.slider { display: flex; align-items: center; gap: .8em; }
+.slider input { flex: 1; min-width: 0; accent-color: var(--white); }
+.slider output { font-family: var(--display); font-weight: 700; font-size: 1.6em; min-width: 3.2ch; }
+.slider .lab { color: var(--muted); font-size: .85em; }
+
+.pitchwrap { flex: 1; min-height: 0; display: grid; place-items: center; }
+#pitch { width: 100%; height: auto; max-height: 72vh; display: block; }
+#pitch text { font-family: var(--display); }
+
+/* Tagesablauf rechts */
+.list { display: flex; flex-direction: column; }
+.unit {
+  display: grid; grid-template-columns: .45em 3.9em minmax(0, 1fr) auto; column-gap: .8em; align-items: center;
+  padding: .36em .6em .36em 0; border-bottom: 1px solid var(--line); transition: opacity .3s ease;
+}
+.unit .sw { align-self: stretch; border-radius: 2px; }
+.unit .t { font-family: var(--display); font-weight: 700; font-size: 1.55em; line-height: 1; }
+.unit .who { min-width: 0; }
+.unit .team { font-family: var(--display); font-weight: 600; font-size: 1.35em; line-height: 1.1; overflow-wrap: anywhere; }
+.unit .meta { color: var(--muted); font-size: .85em; }
+.unit .fld { display: inline-block; font-size: .85em; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 0 .4em; border-radius: 3px; border: 1px solid var(--dim); color: var(--white); margin-right: .3em; }
+.unit.at { background: var(--white); color: var(--blue); border-bottom-color: var(--blue-deep); }
+.unit.at .meta { color: var(--blue-row); }
+.unit.at .fld { border-color: var(--blue); color: var(--blue); }
+.unit.done { opacity: .45; }
+.unit.other { opacity: .28; }
+.state { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.05em; white-space: nowrap; text-align: right; color: var(--muted); }
+.state.live { color: var(--live); }
+.unit.at .state.live { color: #0E8A4C; }
+.state.live::before { content: ""; display: inline-block; width: .55em; height: .55em; border-radius: 50%; background: currentColor; margin-right: .4em; vertical-align: .08em; animation: pulse 1.6s ease-in-out infinite; }
+.state.soon { color: var(--white); background: var(--blue-row); padding: .1em .5em; border-radius: 3px; }
+.unit.at .state.soon { background: var(--blue); }
+@keyframes pulse { 50% { opacity: .25; } }
+
+.empty { padding: 1.2em .6em; border-bottom: 1px solid var(--line); }
+.empty strong { display: block; font-family: var(--display); font-size: 1.8em; font-weight: 600; text-transform: uppercase; }
+.empty span { color: var(--muted); }
+
+.mine { padding: .6em .7em; background: var(--blue-row); border-radius: 4px; }
+.mine b { font-family: var(--display); font-size: 1.3em; letter-spacing: .02em; }
+.mine ul { margin: .3em 0 0; padding: 0; list-style: none; display: grid; gap: .15em; }
+.mine li { display: flex; gap: .6em; flex-wrap: wrap; }
+.mine li span:first-child { min-width: 2.2em; font-weight: 600; }
+
+/* Reiter */
+.tabs { display: flex; align-items: center; gap: .6em 1em; flex-wrap: wrap; padding-block: .55em; background: var(--blue); }
+.tablist { display: flex; gap: .3em; flex-wrap: wrap; }
+.tablist button { font: inherit; font-family: var(--display); font-weight: 600; font-size: 1.05em; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--white); background: transparent; border: 1px solid var(--line); padding: .25em .9em; border-radius: 4px; cursor: pointer; }
+.tablist button[aria-selected="true"] { background: var(--white); color: var(--blue); border-color: var(--white); }
+.tablist button:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
+.tabs .spacer { flex: 1; }
+
+/* Wochenplan: je Tag ein Raster mit den Platzbereichen als Bahnen und 15-Minuten-Zeilen */
+.view { padding-block: clamp(10px, .9vw, 18px); min-width: 0; }
+.wk { --slot: clamp(9px, calc((100vh - 23.5em) / 48), 1.1em); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(14px, 1.4vw, 26px) clamp(10px, 1vw, 20px); }
+.day { min-width: 0; }
+.day h3 { margin: 0; line-height: 1.1; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid var(--white); }
+.day.today h3 span { background: var(--white); color: var(--blue); padding: 0 .3em; }
+.lh, .dg { display: grid; grid-template-columns: 2.7em repeat(5, minmax(0, 1fr)) minmax(0, .6fr); }
+.lh { color: var(--muted); padding: .2em 0; }
+.lh span { font-size: .72em; font-weight: 600; letter-spacing: .04em; text-align: center; white-space: nowrap; overflow: hidden; }
+.dg { grid-template-rows: repeat(var(--n), var(--slot)); position: relative; }
+.dg .lane { grid-row: 1 / -1; border-left: 1px solid var(--line); background: repeating-linear-gradient(to bottom, rgba(255,255,255,.13) 0 1px, transparent 1px calc(var(--slot) * 4)); }
+.dg .lane.lb { background-color: rgba(201,33,30,.12); }
+.dg .ax { grid-column: 1; font-size: .72em; color: var(--muted); line-height: 1; transform: translateY(-.45em); text-align: right; padding-right: .45em; }
+.wk .day:not(:nth-child(3n+1)) .lh, .wk .day:not(:nth-child(3n+1)) .dg { grid-template-columns: 0 repeat(5, minmax(0, 1fr)) minmax(0, .6fr); }
+.wk .day:not(:nth-child(3n+1)) .ax, .wk .day:not(:nth-child(3n+1)) .lh span:first-child { visibility: hidden; }
+.blk { margin: 1px; border-radius: 3px; padding: .12em .25em; overflow: hidden; cursor: pointer; z-index: 1;
+  font-family: var(--display); font-weight: 700; font-size: .95em; line-height: 1.05; border: 0; text-align: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.blk.s { font-size: .85em; }
+.blk { word-break: normal; overflow-wrap: normal; hyphens: none; }
+.blk small { display: block; font-family: var(--body); font-weight: 600; font-size: .8em; margin-top: .1em; }
+.blk:focus-visible { outline: 2px solid var(--white); outline-offset: 1px; }
+.blk { --edge: rgba(255,255,255,.75); --ew: 1.5px; --glow: 0 0 0 0 transparent; position: relative;
+  box-shadow: inset 0 0 0 var(--ew) var(--edge), var(--glow); }
+/* Platzwechsel: oberer Abschnitt ohne Unterkante und leicht überlappend, damit die Fläche ohne Trennlinie durchläuft */
+.blk.jb { box-shadow: inset var(--ew) 0 0 var(--edge), inset calc(-1 * var(--ew)) 0 0 var(--edge), inset 0 var(--ew) 0 var(--edge), var(--glow);
+  margin-bottom: calc(-1 * var(--ew)) !important; z-index: 2; }
+.blk.jt { margin-top: 0 !important; }
+.blk.other { opacity: .18; }
+.blk.mine { --glow: 0 0 0 3px var(--live); }
+.nowline { position: absolute; left: 2.7em; right: 0; height: 0; border-top: 2px solid var(--live); z-index: 0; pointer-events: none; }
+.wk .day:not(:nth-child(3n+1)) .nowline { left: 0; }
+.nowline::before { content: ""; position: absolute; left: -4px; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--live); }
+.legende h3 { margin: 0 0 .5em; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid var(--white); }
+.legende ul { list-style: none; margin: 0; padding: 0; columns: 2 12em; column-gap: 1em; }
+.legende li { break-inside: avoid; margin-bottom: .3em; }
+.legende li { display: flex; align-items: center; gap: .5em; min-width: 0; font-size: .9em; }
+.legende button { font: inherit; font-family: var(--display); font-weight: 700; min-width: 4.6em; padding: .1em .4em; border: 0; border-radius: 3px; cursor: pointer; text-align: center; }
+.legende li.other { opacity: .3; }
+.wkhint { color: var(--muted); font-size: .8em; margin: .5em 0 0; }
+.platzfig { min-width: 0; display: flex; flex-direction: column; }
+.platzfig h3 { margin: 0; line-height: 1.1; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid var(--white); }
+.platzfig svg { display: block; width: 100%; height: calc(var(--slot) * 24 + 1.6em); margin-top: .3em; }
+.platzfig text { font-family: var(--display); }
+
+/* Mannschaften: Tabelle Mannschaft × Wochentag */
+.ttwrap { overflow-x: auto; }
+.tt { width: 100%; border-collapse: collapse; }
+.tt th { text-align: left; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.1em; padding: .25em .5em; border-bottom: 3px solid var(--white); white-space: nowrap; }
+.tt th.today span { background: var(--white); color: var(--blue); padding: 0 .3em; }
+.tt td { border-bottom: 1px solid var(--line); padding: .4em .5em; vertical-align: top; }
+.tt td.n { min-width: 11em; }
+.tt td.n b { font-family: var(--display); font-size: 1.25em; font-weight: 600; }
+.tt td.n .sw { display: inline-block; width: .55em; height: 1.3em; border-radius: 2px; vertical-align: -.25em; margin-right: .5em; }
+.tt td.n small { display: block; color: var(--muted); margin-left: 1.05em; }
+.tt .ut + .ut { margin-top: .35em; }
+.tt .ut .tm { font-family: var(--display); font-weight: 700; font-size: 1.12em; }
+.tt .ut .fl { display: block; color: var(--muted); font-size: .85em; }
+.tt tr.sel td { background: var(--blue-row); }
+.tt tr:hover td { background: rgba(255,255,255,.05); }
+
+@media (max-width: 800px) {
+  .wk { grid-template-columns: minmax(0, 1fr); --slot: 1.25em; }
+  .wk .day:not(:nth-child(3n+1)) .lh, .wk .day:not(:nth-child(3n+1)) .dg { grid-template-columns: 2.7em repeat(5, minmax(0, 1fr)) minmax(0, .6fr); }
+  .wk .day:not(:nth-child(3n+1)) .ax, .wk .day:not(:nth-child(3n+1)) .lh span:first-child { visibility: visible; }
+  .wk .day:not(:nth-child(3n+1)) .nowline { left: 2.7em; }
+  .day { margin-bottom: .8em; }
+  .tt thead { display: none; }
+  .tt, .tt tbody, .tt tr, .tt td { display: block; }
+  .tt tr { padding: .5em 0; border-bottom: 1px solid var(--line); }
+  .tt td { border: 0; padding: .12em 0; }
+  .tt td[data-tag]:empty { display: none; }
+  .tt td[data-tag] { display: grid; grid-template-columns: 2.4em minmax(0, 1fr); }
+  .tt td[data-tag]::before { content: attr(data-tag); color: var(--muted); font-weight: 600; }
+  .tt td[data-tag] .ut { grid-column: 2; }
+  .tt .ut .fl { display: inline; margin-left: .4em; }
+}
+
+/* Helle Darstellung (Homepage): Wochenplan und Tabelle auf weißem Grund */
+.hell .view { background: #F4F7FC; color: #0B2A5C; }
+.hell .day h3, .hell .platzfig h3, .hell .tt th { border-bottom-color: var(--blue); color: var(--blue); }
+.hell .day.today h3 span, .hell .tt th.today span { background: var(--blue); color: #fff; }
+.hell .lh, .hell .dg .ax, .hell .wkhint, .hell .tt td.n small, .hell .tt .ut .fl { color: #4A5F86; }
+.hell .dg .lane { border-left-color: #C9D5EA; background: repeating-linear-gradient(to bottom, #C9D5EA 0 1px, #fff 1px calc(var(--slot) * 4)); }
+.hell .dg .lane.lb { background-color: #FBEDED; background-blend-mode: multiply; }
+.hell .blk { --edge: rgba(0,0,0,.28); --ew: 1px; }
+.hell .blk.mine { --glow: 0 0 0 3px #0E8A4C; }
+.hell .tt td { border-bottom-color: #D5DEEE; }
+.hell .tt .ut .tm { color: #0B2A5C; }
+.hell .tt td[data-tag]::before { color: #4A5F86; }
+.hell .tt tr { border-bottom-color: #D5DEEE; }
+.hell .tt tr.sel td { background: #E4ECF9; }
+.hell .tt tr:hover td { background: #EEF3FB; }
+.hell .tt td.n b { color: var(--blue); }
+.hell .nowline { border-top-color: #0E8A4C; } .hell .nowline::before { background: #0E8A4C; }
+
+/* Helle Darstellung auch für „Platz jetzt“ */
+.hell #viewPlatz { background: #F4F7FC; color: #0B2A5C; }
+.hell #viewPlatz .col h2 { border-bottom-color: var(--blue); color: var(--blue); }
+.hell #viewPlatz .col h2 .when { background: var(--blue); color: #fff; }
+.hell #viewPlatz .col h2 .count, .hell .slider .lab, .hell .unit .meta, .hell .empty span { color: #4A5F86; }
+.hell .pick button { color: var(--blue); border-color: #B7C6E2; background: #fff; }
+.hell .pick button[aria-pressed="true"] { background: var(--blue); color: #fff; border-color: var(--blue); }
+.hell .pick button.now { color: #0E8A4C; border-color: #0E8A4C; }
+.hell .pick button.now[aria-pressed="true"] { background: #0E8A4C; color: #fff; border-color: #0E8A4C; }
+.hell .pick button:focus-visible, .hell .slider input:focus-visible { outline-color: var(--blue); }
+.hell .slider input { accent-color: var(--blue); }
+.hell .slider output { color: var(--blue); }
+.hell .unit { border-bottom-color: #D5DEEE; }
+.hell .unit .t, .hell .unit .team { color: #0B2A5C; }
+.hell .unit .fld { border-color: #9FB2D6; color: #0B2A5C; }
+.hell .unit.at { background: #E4ECF9; color: var(--blue); border-bottom-color: #C9D5EA; }
+.hell .unit.at .fld { border-color: var(--blue); color: var(--blue); }
+.hell .state { color: #4A5F86; }
+.hell .state.live, .hell .unit.at .state.live { color: #0E8A4C; }
+.hell .state.soon, .hell .unit.at .state.soon { background: var(--blue); color: #fff; }
+.hell .mine { background: #E4ECF9; color: #0B2A5C; }
+.hell .empty { border-bottom-color: #D5DEEE; }
+.hell #pitch { filter: drop-shadow(0 1px 2px rgba(11,42,92,.25)); }
+
+/* Statuszeile */
+.foot { display: flex; gap: .8em 1em; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: .9em; background: var(--blue); padding-block: .55em; }
+.foot .spacer { flex: 1; }
+.ctl { display: flex; gap: .4em; flex-wrap: wrap; align-items: center; }
+.ctl select { background: var(--blue-deep); flex: none; width: auto; max-width: 16em; }
+.ctl label { color: var(--muted); }
+.hint { color: var(--white); background: var(--blue-row); padding: .1em .6em; border-radius: 3px; }
+:fullscreen .ctl.full { display: none; }
+
+@media (max-width: 600px) { .clock { flex: 1 1 100%; justify-content: flex-start; text-align: left; } .clock .date { font-size: 1em; } }
+@media (max-width: 900px) {
+  .main { grid-template-columns: minmax(0, 1fr); }
+  #pitch { max-height: none; }
+}
+@media (prefers-reduced-motion: reduce) { .state.live::before { animation: none; } .unit { transition: none; } }
+</style>
+
+<div class="board">
+  <header class="top pad">
+    <div class="logo"><img id="logoImg" src="__LOGO__" alt="Vereinslogo TuS Harpen 08/11"></div>
+    <div class="club">
+      <h1>TuS Harpen 08/11</h1>
+      <p id="sub">Trainingsplan</p>
+    </div>
+    <div class="clock">
+      <div class="time" id="time">--:--</div>
+      <div class="date" id="date"></div>
+    </div>
+  </header>
+
+  <nav class="tabs pad">
+    <div class="tablist" role="tablist" aria-label="Ansicht">
+      <button type="button" role="tab" data-v="woche" aria-selected="true">Wochenplan</button>
+      <button type="button" role="tab" data-v="mannschaften" aria-selected="false">Mannschaften</button>
+      <button type="button" role="tab" data-v="platz" aria-selected="false">Platz jetzt</button>
+    </div>
+    <span class="spacer"></span>
+    <div class="ctl">
+      <label for="team">Mannschaft</label>
+      <select id="team"><option value="">Alle</option></select>
+      <label for="plan">Plan</label>
+      <select id="plan"></select>
+    </div>
+  </nav>
+
+  <main class="view pad" id="viewWoche">
+    <div class="wk" id="wk"></div>
+    <p class="wkhint">Klick auf einen Block zeigt nur diese Mannschaft (nochmal klicken = alle). LB = Laufbahn, V/H = vordere/hintere Platzhälfte, L/R = links/rechts.</p>
+  </main>
+
+  <main class="view pad" id="viewTeams" hidden>
+    <div class="ttwrap"><table class="tt" id="tt"></table></div>
+  </main>
+
+  <main class="main pad" id="viewPlatz" hidden>
+    <section class="col">
+      <h2><span class="when" id="pLabel">Jetzt</span><span id="pDay"></span><span class="count" id="pCount"></span></h2>
+      <div class="pick" id="days" role="group" aria-label="Tag wählen"></div>
+      <div class="slider">
+        <span class="lab">Uhrzeit</span>
+        <input type="range" id="zeit" min="960" max="1320" step="15" value="960" aria-label="Uhrzeit wählen">
+        <output id="zeitOut" for="zeit">16:00</output>
+      </div>
+      <div class="pitchwrap"><svg id="pitch" viewBox="0 0 380 452" role="img" aria-label="Platzbelegung"></svg></div>
+    </section>
+    <aside class="col">
+      <h2><span class="when" id="lLabel">Heute</span><span id="lDay"></span><span class="count" id="lCount"></span></h2>
+      <div id="mine"></div>
+      <div class="list" id="list"></div>
+    </aside>
+  </main>
+
+  <footer class="foot pad">
+    <span id="planInfo"></span>
+    <span id="wechsel"></span>
+    <span class="spacer"></span>
+    <div class="ctl"><button type="button" id="btnStil" aria-pressed="false">Dunkle Ansicht</button></div>
+    <div class="ctl full"><button type="button" id="btnFull">Vollbild</button></div>
+  </footer>
+</div>
+
+<script id="daten" type="application/json">__DATA__</script>
+<script>
+// Daten: trainingsplan.json (vom GitHub-Workflow aus der Excel-Datei erzeugt). Eingebettet als Startwert,
+// auf dem Webspace lädt die Seite die Datei alle 10 Minuten nach.
+let DATEN = JSON.parse(document.getElementById("daten").textContent);
+
+const TAGE = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+const KURZ = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+const MONATE = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+const FELDNAME = { Kleinfeld: "Kleinfeld", VL: "VL", VR: "VR", HL: "HL", HR: "HR", Laufbahn: "Laufbahn" };
+
+const S = { ansicht: "woche", team: "", plan: "", tag: null, zeit: null };   // tag/zeit null = live
+
+function min(t) { const [h, m] = t.split(":").map(Number); return h * 60 + m; }
+function hm(m) { return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); }
+function iso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function de(isoStr) { const [y, m, d] = isoStr.split("-"); return d + "." + m + "." + y; }
+function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+function wtag(d) { return d.getDay() === 0 ? 7 : d.getDay(); }   // 1 = Montag … 7 = Sonntag
+
+function aktuellerPlan(d) {
+  const t = iso(d);
+  const p = DATEN.plaene.find(p => p.gueltig.some(([a, b]) => a <= t && t <= b));
+  if (p) return p;
+  const kommend = DATEN.plaene.map(p => ({ p, a: p.gueltig.map(g => g[0]).filter(a => a > t).sort()[0] })).filter(x => x.a).sort((x, y) => x.a < y.a ? -1 : 1);
+  return kommend.length ? kommend[0].p : DATEN.plaene[DATEN.plaene.length - 1];
+}
+function plan() { return DATEN.plaene.find(p => p.blatt === S.plan) || aktuellerPlan(new Date()); }
+function kontrast(hex) {   // schwarz oder weiß – je nachdem, was auf der Hintergrundfarbe besser lesbar ist (WCAG)
+  const c = hex.replace("#", ""), ch = [0, 2, 4].map(i => parseInt(c.substr(i, 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4));
+  const L = .2126 * ch[0] + .7152 * ch[1] + .0722 * ch[2];
+  return (1.05 / (L + .05)) >= ((L + .05) / .05) ? "#FFFFFF" : "#000000";
+}
+function felderText(f) { return f.map(x => FELDNAME[x] || x).join(" + "); }
+function istMeins(e) { return !S.team || e.mitglieder.includes(S.team) || e.team === S.team; }
+
+/* ---------- Platzgrafik ---------- */
+// Koordinaten im viewBox 0 0 380 452 (Ausrichtung wie im gedruckten Plan: H oben, V unten, Kleinfeld darunter, Laufbahn rechts)
+const G = { x: 8, y: 8, w: 320, h: 320 };
+const ZONEN = {
+  HL: { x: 8, y: 8, w: 160, h: 160 }, HR: { x: 168, y: 8, w: 160, h: 160 },
+  VL: { x: 8, y: 168, w: 160, h: 160 }, VR: { x: 168, y: 168, w: 160, h: 160 },
+  Kleinfeld: { x: 128, y: 342, w: 160, h: 102 },
+  Laufbahn: { x: 330, y: 58, w: 42, h: 284 }
+};
+function grundriss() {
+  const L = 'stroke="var(--grass-line)" stroke-width="1.6" fill="none"';
+  const cx = 168, cy = 168, sx = 320 / 68, sy = 320 / 105;
+  const pw = 40.32 * sx, pd = 16.5 * sy, gw = 18.32 * sx, gd = 5.5 * sy, ps = 11 * sy, R = 30;
+  const ang = Math.asin((pd - ps) / R), dx = R * Math.cos(ang);
+  let s = "";
+  s += '<rect x="8" y="8" width="320" height="320" fill="var(--grass)"/>';
+  s += '<rect x="8" y="328" width="320" height="14" fill="#FF7B59"/>';
+  s += '<rect x="8" y="342" width="320" height="102" fill="#7CC424"/>';
+  s += '<rect x="128" y="342" width="160" height="102" fill="var(--grass)"/>';
+  s += '<rect x="330" y="8" width="42" height="50" fill="#FFDBB6"/>';
+  s += '<rect x="330" y="58" width="42" height="284" fill="#C9211E"/>';
+  s += '<rect x="330" y="342" width="42" height="102" fill="#BDBDBD"/>';
+  for (const k of [1, 2, 3]) s += '<line x1="' + (330 + k * 10.5) + '" y1="58" x2="' + (330 + k * 10.5) + '" y2="342" stroke="#fff" stroke-opacity=".75" stroke-width="1"/>';
+  s += '<line x1="330" y1="334" x2="372" y2="334" stroke="#fff" stroke-opacity=".75" stroke-width="1"/>';
+  // Großfeld
+  s += '<rect x="8.8" y="8.8" width="318.4" height="318.4" ' + L + '/>';
+  s += '<line x1="8" y1="168" x2="328" y2="168" ' + L + '/>';
+  s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" ' + L + '/><circle cx="' + cx + '" cy="' + cy + '" r="2" fill="var(--grass-line)"/>';
+  for (const [y0, dir] of [[8.8, 1], [327.2, -1]]) {
+    s += '<rect x="' + (cx - pw / 2) + '" y="' + (dir > 0 ? y0 : y0 - pd) + '" width="' + pw + '" height="' + pd + '" ' + L + '/>';
+    s += '<rect x="' + (cx - gw / 2) + '" y="' + (dir > 0 ? y0 : y0 - gd) + '" width="' + gw + '" height="' + gd + '" ' + L + '/>';
+    const py = y0 + dir * ps, by = y0 + dir * pd;
+    s += '<circle cx="' + cx + '" cy="' + py + '" r="2" fill="var(--grass-line)"/>';
+    s += '<path d="M' + (cx - dx) + ' ' + by + ' A' + R + ' ' + R + ' 0 0 ' + (dir > 0 ? 0 : 1) + ' ' + (cx + dx) + ' ' + by + '" ' + L + '/>';
+  }
+  // Kleinfeld
+  s += '<rect x="128.8" y="342.8" width="158.4" height="100.4" ' + L + '/>';
+  s += '<line x1="208" y1="342.8" x2="208" y2="443.2" ' + L + '/>';
+  s += '<circle cx="208" cy="393" r="14" ' + L + '/>';
+  s += '<rect x="128.8" y="367" width="22" height="52" ' + L + '/><rect x="265.2" y="367" width="22" height="52" ' + L + '/>';
+  return s;
+}
+function umbruch(text, maxZ) {
+  const w = text.split(" "); const zeilen = []; let z = "";
+  for (const x of w) { if ((z + " " + x).trim().length > maxZ && z) { zeilen.push(z); z = x; } else z = (z + " " + x).trim(); }
+  if (z) zeilen.push(z); return zeilen;
+}
+function rechteck(felder) {
+  const r = felder.map(f => ZONEN[f]).filter(Boolean);
+  const x = Math.min(...r.map(a => a.x)), y = Math.min(...r.map(a => a.y));
+  return { x, y, w: Math.max(...r.map(a => a.x + a.w)) - x, h: Math.max(...r.map(a => a.y + a.h)) - y };
+}
+function belegung(einheiten, tag, t) { return einheiten.filter(e => e.tag === tag && min(e.von) <= t && t < min(e.bis)); }
+function zeichnePlatz(aktiv) {
+  let s = grundriss();
+  const frei = new Set(["HL", "HR", "VL", "VR", "Kleinfeld", "Laufbahn"]);
+  for (const e of aktiv) {
+    const gruppen = [e.felder.filter(f => ["HL","HR","VL","VR"].includes(f)), e.felder.filter(f => f === "Kleinfeld"), e.felder.filter(f => f === "Laufbahn")].filter(g => g.length);
+    for (const g of gruppen) {
+      g.forEach(f => frei.delete(f));
+      const r = rechteck(g), m = istMeins(e);
+      s += '<g opacity="' + (m ? 1 : .32) + '">';
+      s += '<rect x="' + (r.x + 3) + '" y="' + (r.y + 3) + '" width="' + (r.w - 6) + '" height="' + (r.h - 6) + '" rx="3" fill="' + e.farbe + '" fill-opacity=".9" stroke="' + (S.team && m ? "#fff" : "none") + '" stroke-width="3"/>';
+      const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+      if (g[0] === "Laufbahn") {
+        s += '<text transform="translate(' + cx + ' ' + cy + ') rotate(-90)" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="17" fill="' + kontrast(e.farbe) + '">' + esc(e.team + " · bis " + e.bis) + '</text>';
+      } else {
+        let fs = r.h < 120 ? 19 : 25;
+        const lbl = e.mitglieder.length > 1 ? (e.kurz || e.team) : e.team;
+        const laengstes = Math.max(...lbl.split(" ").map(x => x.length));
+        fs = Math.min(fs, (r.w - 18) / (laengstes * .56));
+        const zeilen = umbruch(lbl, Math.floor((r.w - 18) / (fs * .56)));
+        const h = zeilen.length * fs * 1.02 + 18;
+        let y = cy - h / 2 + fs * .8;
+        for (const z of zeilen) { s += '<text x="' + cx + '" y="' + y + '" text-anchor="middle" font-weight="700" font-size="' + fs + '" fill="' + kontrast(e.farbe) + '">' + esc(z) + '</text>'; y += fs * 1.02; }
+        s += '<text x="' + cx + '" y="' + (y + 4) + '" text-anchor="middle" font-weight="600" font-size="14" fill="' + kontrast(e.farbe) + '">' + e.von + '–' + e.bis + '</text>';
+      }
+      s += '</g>';
+    }
+  }
+  for (const f of frei) {
+    if (f === "Laufbahn") continue;
+    const z = ZONEN[f];
+    s += '<text x="' + (z.x + z.w / 2) + '" y="' + (z.y + z.h / 2 + (f === "Kleinfeld" ? -4 : 0)) + '" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="' + (f === "Kleinfeld" ? 20 : 30) + '" fill="#fff" fill-opacity=".55">' + f + '</text>';
+    s += '<text x="' + (z.x + z.w / 2) + '" y="' + (z.y + z.h / 2 + (f === "Kleinfeld" ? 16 : 24)) + '" text-anchor="middle" font-weight="600" font-size="13" fill="#fff" fill-opacity=".55" letter-spacing="1">FREI</text>';
+  }
+  document.getElementById("pitch").innerHTML = s;
+}
+
+/* ---------- Anzeige-Logik ---------- */
+function anzeigeZeitpunkt(p, now) {
+  // live: heute jetzt; wenn gerade nichts läuft, nächste Einheit heute, sonst nächster Trainingstag
+  const t = now.getHours() * 60 + now.getMinutes();
+  const heute = wtag(now);
+  const e = p.einheiten;
+  if (e.some(x => x.tag === heute && min(x.von) <= t && t < min(x.bis))) return { tag: heute, zeit: t, label: "Jetzt", live: true };
+  const spaeter = e.filter(x => x.tag === heute && min(x.von) > t).map(x => min(x.von));
+  if (spaeter.length) return { tag: heute, zeit: Math.min(...spaeter), label: "Heute ab " + hm(Math.min(...spaeter)), live: false };
+  for (let k = 1; k <= 7; k++) {
+    const tg = ((heute - 1 + k) % 7) + 1;
+    const st = e.filter(x => x.tag === tg).map(x => min(x.von));
+    if (st.length) return { tag: tg, zeit: Math.min(...st), label: (k === 1 ? "Morgen" : TAGE[tg % 7]) + " ab " + hm(Math.min(...st)), live: false };
+  }
+  return { tag: heute, zeit: t, label: "Jetzt", live: true };
+}
+
+function render() {
+  const now = new Date();
+  const p = plan();
+  document.getElementById("time").textContent = hm(now.getHours() * 60 + now.getMinutes());
+  document.getElementById("date").textContent = TAGE[now.getDay()] + ", " + now.getDate() + ". " + MONATE[now.getMonth()];
+  document.getElementById("sub").textContent = "Trainingsplan " + (p.saison ? p.saison + " " : "") + (p.titel.match(/\d{4}\/\d{4}/) || [""])[0];
+  const gText = p.gueltig.map(([a, b]) => de(a) + "–" + de(b)).join(" und ");
+  document.getElementById("planInfo").textContent = (p.saison ? p.saison + "plan" : p.titel) + " · gültig " + gText;
+  // Hinweis auf Planwechsel in den nächsten 14 Tagen
+  const in14 = new Date(now.getTime() + 14 * 864e5);
+  const naechster = aktuellerPlan(in14);
+  const w = document.getElementById("wechsel");
+  if (!S.plan && naechster.blatt !== aktuellerPlan(now).blatt) {
+    const ab = naechster.gueltig.map(g => g[0]).filter(a => a > iso(now)).sort()[0];
+    w.innerHTML = '<span class="hint">Ab ' + de(ab) + ' gilt der ' + esc(naechster.saison || "neue") + 'plan</span>';
+  } else w.textContent = "";
+
+  const live = anzeigeZeitpunkt(p, now);
+  const tag = S.tag ?? live.tag;
+  const zeit = S.zeit ?? (S.tag && S.tag !== live.tag ? Math.min(...p.einheiten.filter(e => e.tag === tag).map(e => min(e.von)), 1320) : live.zeit);
+  const istLive = S.tag === null && S.zeit === null;
+
+  // Tagesknöpfe
+  const tageMitTraining = [...new Set(p.einheiten.map(e => e.tag))].sort();
+  document.getElementById("days").innerHTML =
+    '<button type="button" class="now" data-tag="live" aria-pressed="' + istLive + '">Jetzt</button>' +
+    tageMitTraining.map(t => '<button type="button" data-tag="' + t + '" aria-pressed="' + (!istLive && t === tag) + '">' + KURZ[t % 7] + '</button>').join("");
+
+  const zs = document.getElementById("zeit");
+  const tagE = p.einheiten.filter(e => e.tag === tag);
+  zs.min = tagE.length ? Math.min(...tagE.map(e => min(e.von))) : 960;
+  zs.max = tagE.length ? Math.max(...tagE.map(e => min(e.bis))) - 15 : 1320;
+  zs.value = Math.max(+zs.min, Math.min(+zs.max, zeit));
+  document.getElementById("zeitOut").textContent = istLive && live.live ? hm(zeit) : hm(+zs.value);
+
+  const sel = istLive ? zeit : +zs.value;
+  const aktiv = belegung(p.einheiten, tag, sel);
+  zeichnePlatz(aktiv);
+  document.getElementById("pLabel").textContent = istLive ? live.label : TAGE[tag % 7] + " " + hm(sel);
+  document.getElementById("pDay").textContent = "";
+  document.getElementById("pCount").textContent = aktiv.length ? aktiv.length + (aktiv.length === 1 ? " Mannschaft" : " Mannschaften") + " auf dem Platz" : "Platz frei";
+
+  // Tagesablauf
+  const heuteTag = wtag(now), tNow = now.getHours() * 60 + now.getMinutes();
+  document.getElementById("lLabel").textContent = tag === heuteTag ? "Heute" : TAGE[tag % 7];
+  document.getElementById("lCount").textContent = tagE.length + " Einheiten";
+  document.getElementById("list").innerHTML = tagE.length ? tagE.map(e => {
+    const v = min(e.von), b = min(e.bis);
+    let st = "", cls = "unit";
+    if (tag === heuteTag) {
+      if (v <= tNow && tNow < b) st = '<div class="state live">Läuft</div>';
+      else if (v > tNow && v - tNow <= 60) st = '<div class="state soon">in ' + (v - tNow) + ' Min</div>';
+      else if (b <= tNow && istLive) cls += " done";
+    }
+    if (v <= sel && sel < b) cls += " at";
+    if (!istMeins(e)) cls += " other";
+    return '<div class="' + cls + '"><span class="sw" style="background:' + e.farbe + '"></span>' +
+      '<div class="t">' + e.von + '</div>' +
+      '<div class="who"><div class="team">' + esc(e.team) + '</div>' +
+      '<div class="meta">' + e.felder.map(f => '<span class="fld">' + esc(FELDNAME[f] || f) + '</span>').join("") + 'bis ' + e.bis + ' Uhr</div></div>' + st + '</div>';
+  }).join("") : '<div class="empty"><strong>Kein Training</strong><span>An diesem Tag ist der Platz nicht verplant.</span></div>';
+
+  // Zeiten der gewählten Mannschaft
+  const mine = document.getElementById("mine");
+  if (S.team) {
+    const m = p.einheiten.filter(istMeins);
+    mine.innerHTML = '<div class="mine"><b>' + esc(S.team) + '</b> · ' + (m.length ? m.length + "× pro Woche" : "kein Training in diesem Plan") +
+      '<ul>' + m.map(e => '<li><span>' + KURZ[e.tag % 7] + '</span><span>' + e.von + '–' + e.bis + '</span><span>' + esc(felderText(e.felder)) + (e.team !== S.team ? ' · mit ' + esc(e.mitglieder.filter(x => x !== S.team).join(", ")) : "") + '</span></li>').join("") + '</ul></div>';
+  } else mine.innerHTML = "";
+
+  renderWoche(p, now);
+  renderTeams(p, now);
+  document.getElementById("viewWoche").hidden = S.ansicht !== "woche";
+  document.getElementById("viewTeams").hidden = S.ansicht !== "mannschaften";
+  document.getElementById("viewPlatz").hidden = S.ansicht !== "platz";
+  document.querySelectorAll(".tablist button").forEach(b => b.setAttribute("aria-selected", b.dataset.v === S.ansicht));
+}
+
+/* ---------- Wochenplan ---------- */
+const LANES = ["Kleinfeld", "VL", "VR", "HL", "HR", "Laufbahn"];
+const LANEKURZ = ["Kleinfeld", "VL", "VR", "HL", "HR", "LB"];
+function wochentage(p) { return [1, 2, 3, 4, 5].concat([6, 7].filter(t => p.einheiten.some(e => e.tag === t))); }
+function laeufe(felder) {   // zusammenhängende Bahnen, z. B. HL+HR -> eine Fläche, VL+HL -> zwei
+  const idx = felder.map(f => LANES.indexOf(f)).filter(i => i >= 0).sort((a, b) => a - b), out = [];
+  for (const i of idx) { const l = out[out.length - 1]; if (l && l[1] === i - 1) l[1] = i; else out.push([i, i]); }
+  return out;
+}
+function renderWoche(p, now) {
+  const tage = wochentage(p);
+  const vs = p.einheiten.map(e => min(e.von)), bs = p.einheiten.map(e => min(e.bis));
+  const start = vs.length ? Math.floor(Math.min(...vs) / 60) * 60 : 960, ende = bs.length ? Math.ceil(Math.max(...bs) / 60) * 60 : 1320;
+  const n = (ende - start) / 15, heute = wtag(now), tNow = now.getHours() * 60 + now.getMinutes();
+  const wk = document.getElementById("wk");
+  wk.style.setProperty("--days", tage.length);
+  wk.innerHTML = tage.map(tag => {
+    let g = '';
+    for (let m = start; m < ende; m += 60) g += '<span class="ax" style="grid-row:' + ((m - start) / 15 + 1) + '">' + hm(m) + '</span>';
+    LANES.forEach((l, i) => g += '<span class="lane' + (l === "Laufbahn" ? " lb" : "") + '" style="grid-column:' + (i + 2) + '"></span>');
+    // Flächen sammeln; gleiche Mannschaft, zeitlich direkt anschließend und überlappende Bahnen = eine zusammenhängende Fläche
+    const segs = [];
+    for (const u of p.einheiten.filter(x => x.tag === tag))
+      for (const [a, b] of laeufe(u.felder)) segs.push({ e: u, a, b, r1: (min(u.von) - start) / 15 + 1, r2: (min(u.bis) - start) / 15 + 1 });
+    const grp = segs.map((_, i) => i);
+    const root = i => grp[i] === i ? i : (grp[i] = root(grp[i]));
+    const beruehrt = (x, y) => x.e.team === y.e.team && x.a <= y.b && y.a <= x.b && (x.r2 === y.r1 || y.r2 === x.r1 || (x.r1 === y.r1 && x.r2 === y.r2));
+    segs.forEach((x, i) => segs.forEach((y, j) => { if (i < j && beruehrt(x, y)) grp[root(i)] = root(j); }));
+    const gruppen = {};
+    segs.forEach((x, i) => (gruppen[root(i)] = gruppen[root(i)] || []).push(x));
+    for (const gs of Object.values(gruppen)) {
+      const von = Math.min(...gs.map(x => min(x.e.von))), bis = Math.max(...gs.map(x => min(x.e.bis)));
+      const traeger = gs.reduce((m, x) => (x.r2 - x.r1) * (x.b - x.a + 1) > (m.r2 - m.r1) * (m.b - m.a + 1) ? x : m, gs[0]);
+      const felderAlle = [...new Set(gs.flatMap(x => x.e.felder))];
+      for (const x of gs) {
+        const u = x.e, hoch = x.r2 - x.r1, breit = x.b - x.a + 1;
+        const oben = gs.some(y => y !== x && y.r2 === x.r1 && y.a <= x.b && x.a <= y.b);
+        const unten = gs.some(y => y !== x && y.r1 === x.r2 && y.a <= x.b && x.a <= y.b);
+        const meins = S.team && istMeins(u), anders = S.team && !istMeins(u);
+        const r = (oben ? "0 0 " : "3px 3px ") + (unten ? "0 0" : "3px 3px");
+        const txt = x === traeger ? esc(u.kurz || u.team).replace(/\//g, "/<wbr>") + ((bis - von) / 15 >= 4 && hoch >= 2 ? '<small>' + hm(von) + '–' + hm(bis) + '</small>' : '') : '';
+        const info = u.team + " · " + TAGE[tag % 7] + " " + hm(von) + "–" + hm(bis) + (gs.length > 1 ? " (" + gs.map(y => y.e.von + "–" + y.e.bis + " " + felderText(y.e.felder)).filter((v, i, a) => a.indexOf(v) === i).join(", ") + ")" : " · " + felderText(u.felder));
+        g += '<button type="button" class="blk' + (breit < 2 ? " s" : "") + (anders ? " other" : "") + (meins ? " mine" : "") + (unten ? " jb" : "") + (oben ? " jt" : "") + '" data-team="' + esc(u.mitglieder[0]) + '"' +
+          ' style="grid-row:' + x.r1 + '/' + x.r2 + ';grid-column:' + (x.a + 2) + '/' + (x.b + 3) + ';background:' + u.farbe + ';color:' + kontrast(u.farbe) +
+          ';margin-top:' + (oben ? 0 : 1) + 'px;margin-bottom:' + (unten ? 0 : 1) + 'px;border-radius:' + r + '"' +
+          ' title="' + esc(info) + '" aria-label="' + esc(info) + '"' + (x === traeger ? '' : ' tabindex="-1"') + '>' + txt + '</button>';
+      }
+    }
+    if (tag === heute && tNow >= start && tNow < ende && !S.plan) g += '<span class="nowline" style="top:calc(var(--slot) * ' + ((tNow - start) / 15) + ')"></span>';
+    return '<section class="day' + (tag === heute ? " today" : "") + '"><h3><span>' + TAGE[tag % 7] + '</span></h3>' +
+      '<div class="lh"><span></span>' + LANEKURZ.map(x => '<span>' + x + '</span>').join("") + '</div>' +
+      '<div class="dg" style="--n:' + n + '">' + g + '</div></section>';
+  }).join("") + '<section class="platzfig"><h3>Aufteilung Sportplatz</h3>' + platzAufteilung() + '</section>';
+}
+
+function platzAufteilung() {
+  let s = grundriss();
+  const lab = (x, y, txt, fs) => '<text x="' + x + '" y="' + y + '" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="' + fs + '" fill="#fff">' + txt + '</text>';
+  // Viertel abgrenzen: leicht unterschiedliche Rasenfarbe + gestrichelte Trennlinien
+  s += '<rect x="8" y="8" width="160" height="160" fill="#000" fill-opacity=".10"/><rect x="168" y="168" width="160" height="160" fill="#000" fill-opacity=".10"/>';
+  s += '<line x1="168" y1="8" x2="168" y2="328" stroke="#fff" stroke-width="3" stroke-dasharray="10 6"/>';
+  s += '<line x1="8" y1="168" x2="328" y2="168" stroke="#fff" stroke-width="3" stroke-dasharray="10 6"/>';
+  for (const f of ["HL", "HR", "VL", "VR"]) { const z = ZONEN[f]; s += lab(z.x + z.w / 2, z.y + z.h / 2, f, 34); }
+  s += lab(208, 393, "Kleinfeld", 30);
+  s += '<text transform="translate(351 200) rotate(-90)" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="26" fill="#fff">Laufbahn</text>';
+  return '<svg viewBox="0 0 380 452" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Aufteilung des Sportplatzes: hinten HL und HR, vorne VL und VR, darunter Kleinfeld, rechts Laufbahn">' + s + '</svg>';
+}
+
+/* ---------- Mannschaften ---------- */
+function mannschaftsliste() {
+  if (DATEN.mannschaften && DATEN.mannschaften.length) return DATEN.mannschaften.map(m => m.name);
+  return [...new Set(DATEN.plaene.flatMap(p => p.einheiten.flatMap(e => e.mitglieder)))];
+}
+function farbeVon(name) { const m = (DATEN.mannschaften || []).find(x => x.name === name); return m ? m.farbe : "#BFBFBF"; }
+function renderTeams(p, now) {
+  const tage = wochentage(p), heute = wtag(now);
+  const liste = mannschaftsliste();
+  const namen = liste.filter(n => /^Mädchen/i.test(n)).concat(liste.filter(n => !/^Mädchen/i.test(n)))   // Mädchen ganz oben
+    .filter(n => !S.team || n === S.team);
+  let h = '<thead><tr><th>Mannschaft</th>' + tage.map(t => '<th' + (t === heute ? ' class="today"' : '') + '><span>' + TAGE[t % 7] + '</span></th>').join("") + '</tr></thead><tbody>';
+  for (const n of namen) {
+    const es = p.einheiten.filter(e => e.mitglieder.includes(n));
+    const anzahl = es.filter(e => !es.some(f => f.tag === e.tag && f.bis === e.von)).length;   // Platzwechsel zählt nicht als eigenes Training
+    h += '<tr' + (S.team === n ? ' class="sel"' : '') + '><td class="n"><span class="sw" style="background:' + farbeVon(n) + '"></span><b>' + esc(n) + '</b>' +
+      '<small>' + (anzahl ? anzahl + "× pro Woche" : "kein Training") + '</small></td>';
+    for (const t of tage) {
+      // direkt anschließende Abschnitte (Platzwechsel im Training) zu einem Eintrag zusammenfassen
+      const x = es.filter(e => e.tag === t).sort((a, b) => min(a.von) - min(b.von)), ketten = [];
+      for (const e of x) { const k = ketten[ketten.length - 1]; if (k && k[k.length - 1].bis === e.von) k.push(e); else ketten.push([e]); }
+      h += '<td data-tag="' + KURZ[t % 7] + '">' + ketten.map(k => {
+        const mit = [...new Set(k.flatMap(e => e.mitglieder))].filter(m => m !== n);
+        const ort = k.map((e, i) => (i ? "ab " + e.von + " " : "") + felderText(e.felder)).join(", ");
+        return '<div class="ut"><span class="tm">' + k[0].von + '–' + k[k.length - 1].bis + '</span>' +
+          '<span class="fl">' + esc(ort) + (mit.length ? ' · mit ' + esc(mit.join(", ")) : '') + '</span></div>';
+      }).join("") + '</td>';
+    }
+    h += '</tr>';
+  }
+  document.getElementById("tt").innerHTML = h + '</tbody>';
+}
+
+function fuelleAuswahl() {
+  const reihenfolge = n => {
+    const regeln = [/^Ballgew/i, /^G\d/, /^F\d/, /^E\d/, /^D\d/, /^C\d/, /^B\d/, /^A\d/, /^Mädchen/, /Damen/, /^\d\. Herren/, /^Alte Herren/];
+    const i = regeln.findIndex(r => r.test(n)); return (i < 0 ? 99 : i) + n;
+  };
+  const alle = DATEN.mannschaften && DATEN.mannschaften.length ? mannschaftsliste()
+    : [...new Set(DATEN.plaene.flatMap(p => p.einheiten.flatMap(e => e.mitglieder)))].sort((a, b) => reihenfolge(a).localeCompare(reihenfolge(b), "de", { numeric: true }));
+  const t = document.getElementById("team");
+  t.innerHTML = '<option value="">Alle</option>' + alle.map(n => '<option value="' + esc(n) + '"' + (n === S.team ? " selected" : "") + '>' + esc(n) + '</option>').join("");
+  const pl = document.getElementById("plan");
+  pl.innerHTML = '<option value="">Aktuell</option>' + DATEN.plaene.map(p => '<option value="' + esc(p.blatt) + '"' + (p.blatt === S.plan ? " selected" : "") + '>' + esc(p.saison || p.blatt) + '</option>').join("");
+}
+
+/* ---------- Bedienung ---------- */
+document.getElementById("days").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  if (b.dataset.tag === "live") { S.tag = null; S.zeit = null; } else { S.tag = +b.dataset.tag; S.zeit = null; }
+  render();
+});
+document.getElementById("zeit").addEventListener("input", ev => {
+  if (S.tag === null) S.tag = anzeigeZeitpunkt(plan(), new Date()).tag;
+  S.zeit = +ev.target.value; render();
+});
+document.getElementById("team").addEventListener("change", ev => { S.team = ev.target.value; merken(); render(); });
+document.getElementById("plan").addEventListener("change", ev => { S.plan = ev.target.value; S.tag = null; S.zeit = null; render(); });
+document.querySelector(".tablist").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return; S.ansicht = b.dataset.v; setHash(); render();
+});
+document.getElementById("wk").addEventListener("click", ev => {
+  const b = ev.target.closest(".blk, .blk-leg"); if (!b) return;
+  S.team = S.team === b.dataset.team ? "" : b.dataset.team; document.getElementById("team").value = S.team; merken(); render();
+});
+function stil(h) {
+  document.querySelector(".board").classList.toggle("hell", h);
+  const b = document.getElementById("btnStil"); b.textContent = h ? "Dunkle Ansicht" : "Helle Ansicht"; b.setAttribute("aria-pressed", "false");
+}
+document.getElementById("btnStil").addEventListener("click", () => stil(!document.querySelector(".board").classList.contains("hell")));
+document.getElementById("btnFull").addEventListener("click", () => {
+  const el = document.documentElement;
+  try { if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen().catch(() => {}); } catch (e) {}
+});
+const ANSICHTEN = ["woche", "mannschaften", "platz"];
+function setHash() { try { history.replaceState(null, "", "#" + S.ansicht); } catch (e) {} }
+function merken() { try { localStorage.setItem("tp-team", S.team); } catch (e) {} }
+
+// Startzustand: ?team=G4&ansicht=woche (für Links von den Mannschaftsseiten) oder #woche
+(function start() {
+  try { const q = new URLSearchParams(location.search); if (q.get("team")) S.team = q.get("team"); if (ANSICHTEN.includes(q.get("ansicht"))) S.ansicht = q.get("ansicht"); } catch (e) {}
+  if (ANSICHTEN.includes(location.hash.slice(1))) S.ansicht = location.hash.slice(1);
+  if (!S.team) { try { S.team = localStorage.getItem("tp-team") || ""; } catch (e) {} }
+  let hell = true;   // beim Aufruf immer hell; nur ?stil=dunkel (Fernseher im Vereinsheim) startet dunkel
+  try { const q = new URLSearchParams(location.search).get("stil"); if (q) hell = q === "hell"; } catch (e) {}
+  stil(hell);
+  window.addEventListener("hashchange", () => { if (ANSICHTEN.includes(location.hash.slice(1))) { S.ansicht = location.hash.slice(1); render(); } });
+  fuelleAuswahl();
+  render();
+  setInterval(() => { if ((S.tag === null && S.zeit === null) || S.ansicht !== "platz") render(); else document.getElementById("time").textContent = hm(new Date().getHours() * 60 + new Date().getMinutes()); }, 20000);
+  // auf dem Webspace: aktuelle Daten nachladen (Änderungen an der Excel-Datei erscheinen ohne Neuladen)
+  async function nachladen() {
+    try {
+      const r = await fetch("trainingsplan.json?" + Date.now(), { cache: "no-store" });
+      if (r.ok) { const d = await r.json(); if (d && d.plaene && d.erzeugt !== DATEN.erzeugt) { DATEN = d; fuelleAuswahl(); render(); } }
+    } catch (e) {}
+  }
+  if (location.protocol.startsWith("http")) { nachladen(); setInterval(nachladen, 600000); }
+})();
+</script>
