@@ -148,15 +148,14 @@ body {
 .axcol.l .axg span { text-align: right; }
 .axcol.r .axg span { text-align: left; }
 .blk { margin: 1px; border-radius: 3px; padding: .12em .25em; overflow: hidden; cursor: pointer; z-index: 1;
-  font-family: var(--display); font-weight: 700; font-size: .95em; line-height: 1.05; border: 0; text-align: center;
+  font-family: var(--display); font-weight: 700; line-height: 1.05; border: 0; text-align: center;
   display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.blk.s { font-size: .85em; }
-.blk.s.xs { font-size: min(.85em, max(.66em, 1.05vw)); }   /* lange Namen in schmalen Spalten etwas kleiner */
-.blk.lbk { padding: 0 1px; font-size: min(.85em, calc(var(--slot) * 1.05)); line-height: 1; }
-.blk.lbk .zt { font-size: .78em; line-height: 1; margin-top: .1em; letter-spacing: -.03em; white-space: nowrap; }
+/* Einheitliche Schriftgröße in allen Feldern: richtet sich nach der engsten Stelle (schmale Spalte, kurze Laufbahn-Zeit) */
+.blk { font-size: min(.85em, max(.66em, 1.05vw), calc(var(--slot) * 1.05)); }
+.blk.lbk { padding: 0 1px; line-height: 1; }
 .blk { word-break: normal; overflow-wrap: normal; hyphens: none; }
 .blk .nm { display: block; max-width: 100%; }
-.blk small { display: block; font-family: var(--body); font-weight: 600; font-size: .8em; margin-top: .1em; }
+.blk small { display: block; font-family: var(--body); font-weight: 600; font-size: .8em; line-height: 1; margin-top: .1em; letter-spacing: -.02em; }
 .blk:focus-visible { outline: 2px solid var(--white); outline-offset: 1px; }
 .blk { --edge: rgba(255,255,255,.75); --ew: 1.5px; --glow: 0 0 0 0 transparent; position: relative;
   box-shadow: inset 0 0 0 var(--ew) var(--edge), var(--glow); }
@@ -292,7 +291,6 @@ body {
   .tabs #team { flex: 1 1 0; width: 0; max-width: none; }
   .tabs #plan { flex: 0 0 auto; }
   /* Reiter in einer Zeile, gleich breit */
-  .blk.lbk .zt { white-space: normal; }
   .tablist { flex: 1 1 100%; display: flex; flex-wrap: nowrap; gap: .3em; }
   .tablist button[hidden] { display: none; }
   .hu { grid-template-columns: 2.2em minmax(0, 1fr) auto; row-gap: .15em; }
@@ -669,7 +667,7 @@ function renderWoche(p, now) {
         const zeit = lb ? '<small class="zt">' + hm(von) + '–' + hm(bis) + '</small>' : ((bis - von) / 15 >= 4 && hoch >= 2 ? '<small>' + hm(von) + '–' + hm(bis) + '</small>' : '');
         const txt = x === traeger ? '<span class="nm">' + esc(u.kurz || u.team).replace(/\//g, "/<wbr>") + '</span>' + zeit : '';
         const info = u.team + " · " + TAGE[tag % 7] + " " + hm(von) + "–" + hm(bis) + (gs.length > 1 ? " (" + gs.map(y => y.e.von + "–" + y.e.bis + " " + felderText(y.e.felder)).filter((v, i, a) => a.indexOf(v) === i).join(", ") + ")" : " · " + felderText(u.felder));
-        g += '<button type="button" class="blk' + (breit < 2 ? " s" : "") + (lb ? " lbk" : "") + (x === traeger && unten ? " ueber" : "") + (breit < 2 && Math.max(...(u.kurz || u.team).split(/[ \/]/).map(w => w.length)) > 6 ? " xs" : "") + (anders ? " other" : "") + (meins ? " mine" : "") + (unten ? " jb" : "") + (oben ? " jt" : "") + '" data-team="' + esc(u.mitglieder[0]) + '"' +
+        g += '<button type="button" class="blk' + (breit < 2 ? " s" : "") + (lb ? " lbk" : "") + (x === traeger && unten ? " ueber" : "") + (anders ? " other" : "") + (meins ? " mine" : "") + (unten ? " jb" : "") + (oben ? " jt" : "") + '" data-team="' + esc(u.mitglieder[0]) + '"' +
           ' style="grid-row:' + x.r1 + '/' + x.r2 + ';grid-column:' + (x.a + 2) + '/' + (x.b + 3) + ';background:' + u.farbe + ';color:' + kontrast(u.farbe) +
           ';margin-top:' + (oben ? 0 : 1) + 'px;margin-bottom:' + (unten ? 0 : 1) + 'px;border-radius:' + r + '"' +
           ' title="' + esc(info) + '" aria-label="' + esc(info) + '"' + (x === traeger ? '' : ' tabindex="-1"') + '>' + txt + '</button>';
