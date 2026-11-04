@@ -29,8 +29,8 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .board { box-sizing: border-box; min-height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); }
-.pad { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-@media (min-width: 1200px) { .pad { padding-left: max(2vw, env(safe-area-inset-left, 0px)); padding-right: max(2vw, env(safe-area-inset-right, 0px)); } }
+.pad { padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
+@media (min-width: 1200px) { .pad { padding-left: max(.8vw, env(safe-area-inset-left, 0px)); padding-right: max(.8vw, env(safe-area-inset-right, 0px)); } }
 
 /* Kopfleiste */
 .top {
@@ -128,7 +128,8 @@ body {
 
 /* Wochenplan: je Tag ein Raster mit den Platzbereichen als Bahnen und 15-Minuten-Zeilen */
 .view { padding-block: clamp(10px, .9vw, 18px); min-width: 0; }
-.wk { --slot: clamp(9px, calc((100vh - 21.5em) / 48), 1.1em); display: grid; grid-template-columns: 2.6em repeat(3, minmax(0, 1fr)) 2.6em; gap: clamp(14px, 1.4vw, 26px) clamp(10px, 1vw, 20px); }
+.wk { --slot: clamp(9px, calc((100vh - 21.5em) / 48), 1.1em); --gx: clamp(8px, .8vw, 16px); display: grid; grid-template-columns: 2.6em repeat(3, minmax(0, 1fr)) 2.6em; gap: clamp(14px, 1.4vw, 26px) var(--gx); }
+.wk .rest { display: grid; grid-template-columns: 2.6em minmax(0, 1fr); column-gap: var(--gx); min-width: 0; }
 .day { min-width: 0; }
 .day h3 { margin: 0; line-height: 1.1; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid var(--white); }
 .day.today h3 span { background: var(--white); color: var(--blue); padding: 0 .3em; }
@@ -216,6 +217,7 @@ body {
 @media (max-width: 800px) {
   .wk { grid-template-columns: minmax(0, 1fr); --slot: 1.25em; }
   .axcol { display: none; }
+  .wk .rest { display: block; grid-column: auto !important; }
   .lh, .dg { grid-template-columns: 2.7em repeat(5, minmax(0, 1fr)) minmax(0, .85fr); }
   .dg .ax { display: block; }
   .nowline { left: 2.7em; }
@@ -682,7 +684,8 @@ function renderWoche(p, now) {
       '<div class="lh"><span></span>' + LANEKURZ.map(x => '<span>' + x + '</span>').join("") + '<span></span></div>' +
       '<div class="dg" style="--n:' + n + '">' + g + '</div></section>';
   });
-  kacheln.push('<section class="platzfig"><h3>Aufteilung Sportplatz</h3>' + platzAufteilung() + '</section>');
+  const platz = '<section class="platzfig"><h3>Aufteilung Sportplatz</h3>' + platzAufteilung() + '</section>';
+  kacheln.push(platz);
   // je Zeile drei Kacheln, links und rechts davon die Zeitleiste (rechts nur, wenn daneben ein Tag steht)
   let zeit = '';
   for (let m = start; m < ende; m += 60) zeit += '<span style="grid-row:' + ((m - start) / 15 + 1) + '">' + hm(m) + '</span>';
@@ -690,9 +693,15 @@ function renderWoche(p, now) {
     '<div class="axg" style="--n:' + n + '">' + (mitZeit ? zeit : '') + '</div></div>';
   let html = '';
   for (let i = 0; i < kacheln.length; i += 3) {
-    const reihe = kacheln.slice(i, i + 3), rechtsTag = i + 2 < tage.length;
-    while (reihe.length < 3) reihe.push('<div></div>');
-    html += achse("l", true) + reihe.join("") + achse("r", rechtsTag);
+    const reihe = kacheln.slice(i, i + 3), rechtsTag = i + 2 < tage.length, d = Math.max(0, Math.min(3, tage.length - i));
+    if (!rechtsTag && d > 0 && reihe[d] === platz) {
+      // Zeitleiste direkt rechts neben dem letzten Tag, die Platzgrafik rückt dafür nach rechts
+      html += achse("l", true) + reihe.slice(0, d).join("") +
+        '<div class="rest" style="grid-column: span ' + (4 - d) + '">' + achse("r", true) + platz + '</div>';
+    } else {
+      while (reihe.length < 3) reihe.push('<div></div>');
+      html += achse("l", true) + reihe.join("") + achse("r", rechtsTag);
+    }
   }
   wk.innerHTML = html;
   passePlatzfigAn();
