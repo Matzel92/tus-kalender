@@ -103,10 +103,20 @@ def main():
     order = {t["name"]: i for i, t in enumerate(teams)}
     out = []
     for pname, pinfo in plaene.items():
-        grp = {}
+        # gleiche Mannschaft, gleicher Tag und gleiche Zeit auf mehreren Platzteilen -> eine Einheit (z. B. HR + nur im Winter HL)
+        vereint = {}
         for (p, team, tag, v, b, f) in roh:
             if p and p != pname: continue
-            grp.setdefault((tag, v, b, tuple(f)), []).append(team)
+            vereint.setdefault((team, tag, v, b), set()).update(f)
+        # direkt aneinander anschließende Zeiten mit denselben Platzteilen zusammenfassen
+        stuecke = sorted(((team, tag, tuple(x for x in FELDER if x in f), v, b) for (team, tag, v, b), f in vereint.items()))
+        zus = []
+        for s in stuecke:
+            if zus and zus[-1][:3] == s[:3] and zus[-1][4] == s[3]: zus[-1] = zus[-1][:4] + (s[4],)
+            else: zus.append(s)
+        grp = {}
+        for (team, tag, f, v, b) in zus:
+            grp.setdefault((tag, v, b, f), []).append(team)
         einheiten = []
         for (tag, v, b, f), mitgl in grp.items():
             mitgl = sorted(set(mitgl), key=lambda n: order.get(n, 999))
