@@ -383,7 +383,7 @@ const ZONEN = {
 };
 const VIEWBOX = "0 0 312 500";
 function grundriss() {
-  const L = 'stroke="var(--grass-line)" stroke-width="1.5" fill="none"';
+  const L = 'stroke="var(--grass-line)" stroke-width="1.5" fill="none" vector-effect="non-scaling-stroke"';
   const sx = P.w / 68, sy = P.h / 105;
   const pw = 40.32 * sx, pd = 16.5 * sy, gw = 18.32 * sx, gd = 5.5 * sy, ps = 11 * sy, R = 9.15 * sy;
   const ang = Math.asin((pd - ps) / R), dx = R * Math.cos(ang);
@@ -394,7 +394,7 @@ function grundriss() {
   s += r(K.x - 8, 396, K.w + 16, 104, "#D29A84");                                  // Weg um das Kleinfeld
   s += r(P.x, P.y, P.w, P.h, "var(--grass)");
   s += r(T.x, T.y, T.w, T.h, "#C0392B");
-  for (const k of [1, 2, 3]) s += '<line x1="' + (T.x + k * T.w / 4) + '" y1="' + T.y + '" x2="' + (T.x + k * T.w / 4) + '" y2="' + (T.y + T.h) + '" stroke="#fff" stroke-opacity=".7" stroke-width=".8"/>';
+  for (const k of [1, 2, 3]) s += '<line x1="' + (T.x + k * T.w / 4) + '" y1="' + T.y + '" x2="' + (T.x + k * T.w / 4) + '" y2="' + (T.y + T.h) + '" stroke="#fff" stroke-opacity=".7" stroke-width=".8" vector-effect="non-scaling-stroke"/>';
   s += r(K.x, K.y, K.w, K.h, "var(--grass)");
   // Großfeld
   s += '<rect x="' + (P.x + .75) + '" y="' + (P.y + .75) + '" width="' + (P.w - 1.5) + '" height="' + (P.h - 1.5) + '" ' + L + '/>';
@@ -555,6 +555,7 @@ function render() {
   document.getElementById("viewTeams").hidden = S.ansicht !== "mannschaften";
   document.getElementById("viewPlatz").hidden = S.ansicht !== "platz";
   document.querySelectorAll(".tablist button").forEach(b => b.setAttribute("aria-selected", b.dataset.v === S.ansicht));
+  passePlatzfigAn();
 }
 
 /* ---------- Wochenplan ---------- */
@@ -611,20 +612,32 @@ function renderWoche(p, now) {
       '<div class="lh"><span></span>' + LANEKURZ.map(x => '<span>' + x + '</span>').join("") + '<span></span></div>' +
       '<div class="dg" style="--n:' + n + '">' + g + '</div></section>';
   }).join("") + '<section class="platzfig"><h3>Aufteilung Sportplatz</h3>' + platzAufteilung() + '</section>';
+  passePlatzfigAn();
 }
 
-function platzAufteilung() {
-  let s = grundriss();
-  const lab = (x, y, txt, fs) => '<text x="' + x + '" y="' + y + '" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="' + fs + '" fill="#fff">' + txt + '</text>';
-  // Viertel abgrenzen: leicht unterschiedliche Rasenfarbe + gestrichelte Trennlinien
-  for (const f of ["HL", "VR"]) { const z = ZONEN[f]; s += '<rect x="' + z.x + '" y="' + z.y + '" width="' + z.w + '" height="' + z.h + '" fill="#000" fill-opacity=".10"/>'; }
-  s += '<line x1="' + PX + '" y1="' + P.y + '" x2="' + PX + '" y2="' + (P.y + P.h) + '" stroke="#fff" stroke-width="2.5" stroke-dasharray="9 6"/>';
-  s += '<line x1="' + P.x + '" y1="' + PY + '" x2="' + (P.x + P.w) + '" y2="' + PY + '" stroke="#fff" stroke-width="2.5" stroke-dasharray="9 6"/>';
-  for (const f of ["HL", "HR", "VL", "VR"]) { const z = ZONEN[f]; s += lab(z.x + z.w / 2, z.y + z.h / 2, f, 32); }
-  s += lab(K.x + K.w / 2, K.y + K.h / 2, "Kleinfeld", 24);
-  s += '<text transform="translate(' + (T.x + T.w / 2) + ' ' + (T.y + T.h / 2) + ') rotate(-90)" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="19" fill="#fff">Laufbahn</text>';
-  return '<svg viewBox="' + VIEWBOX + '" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Aufteilung des Sportplatzes: Großfeld mit HL und HR hinten, VL und VR vorne, rechts die Laufbahn, hinter dem vorderen Tor das Kleinfeld">' + s + '</svg>';
+function platzAufteilung(seitenverh) {
+  // seitenverh = Breite/Höhe der verfügbaren Fläche; die Grafik wird waagerecht gestreckt, Schrift bleibt unverzerrt
+  const H = 500, W = Math.max(312, H * (seitenverh || 312 / 500)), f = W / 312;
+  let g = grundriss();
+  for (const q of ["HL", "VR"]) { const z = ZONEN[q]; g += '<rect x="' + z.x + '" y="' + z.y + '" width="' + z.w + '" height="' + z.h + '" fill="#000" fill-opacity=".10"/>'; }
+  g += '<line x1="' + PX + '" y1="' + P.y + '" x2="' + PX + '" y2="' + (P.y + P.h) + '" stroke="#fff" stroke-width="2.5" stroke-dasharray="9 6" vector-effect="non-scaling-stroke"/>';
+  g += '<line x1="' + P.x + '" y1="' + PY + '" x2="' + (P.x + P.w) + '" y2="' + PY + '" stroke="#fff" stroke-width="2.5" stroke-dasharray="9 6" vector-effect="non-scaling-stroke"/>';
+  const lab = (x, y, txt, fs) => '<text x="' + (x * f) + '" y="' + y + '" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="' + fs + '" fill="#fff">' + txt + '</text>';
+  let s = '<g transform="scale(' + f + ' 1)">' + g + '</g>';
+  for (const q of ["HL", "HR", "VL", "VR"]) { const z = ZONEN[q]; s += lab(z.x + z.w / 2, z.y + z.h / 2, q, 44); }
+  s += lab(K.x + K.w / 2, K.y + K.h / 2, "Kleinfeld", Math.min(40, 24 * f));
+  s += '<text transform="translate(' + ((T.x + T.w / 2) * f) + ' ' + (T.y + T.h / 2) + ') rotate(-90)" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="' + Math.min(34, 19 * f) + '" fill="#fff">Laufbahn</text>';
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="Aufteilung des Sportplatzes: Großfeld mit HL und HR hinten, VL und VR vorne, rechts die Laufbahn, hinter dem vorderen Tor das Kleinfeld">' + s + '</svg>';
 }
+
+// Aufteilung Sportplatz auf die volle Breite der Spalte ziehen (nach dem Einfügen messen)
+function passePlatzfigAn() {
+  const svg = document.querySelector("#wk .platzfig svg");
+  if (!svg || document.getElementById("viewWoche").hidden) return;
+  const r = svg.getBoundingClientRect();
+  if (r.width > 0 && r.height > 0) svg.outerHTML = platzAufteilung(r.width / r.height);
+}
+window.addEventListener("resize", () => { clearTimeout(window._pf); window._pf = setTimeout(passePlatzfigAn, 150); });
 
 /* ---------- Mannschaften ---------- */
 function mannschaftsliste() {
