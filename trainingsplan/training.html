@@ -128,24 +128,25 @@ body {
 
 /* Wochenplan: je Tag ein Raster mit den Platzbereichen als Bahnen und 15-Minuten-Zeilen */
 .view { padding-block: clamp(10px, .9vw, 18px); min-width: 0; }
-.wk { --slot: clamp(9px, calc((100vh - 23.5em) / 48), 1.1em); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(14px, 1.4vw, 26px) clamp(10px, 1vw, 20px); }
+.wk { --slot: clamp(9px, calc((100vh - 21.5em) / 48), 1.1em); display: grid; grid-template-columns: 2.6em repeat(3, minmax(0, 1fr)) 2.6em; gap: clamp(14px, 1.4vw, 26px) clamp(10px, 1vw, 20px); }
 .day { min-width: 0; }
 .day h3 { margin: 0; line-height: 1.1; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid var(--white); }
 .day.today h3 span { background: var(--white); color: var(--blue); padding: 0 .3em; }
-.lh, .dg { display: grid; grid-template-columns: 2.7em repeat(5, minmax(0, 1fr)) minmax(0, .85fr) 0; }
+.lh, .dg { display: grid; grid-template-columns: 0 repeat(5, minmax(0, 1fr)) minmax(0, .85fr); }
 .lh { color: var(--muted); padding: .2em 0; }
 .lh span { font-size: .72em; font-weight: 600; letter-spacing: .04em; text-align: center; white-space: nowrap; overflow: hidden; }
 .dg { grid-template-rows: repeat(var(--n), var(--slot)); position: relative; }
 .dg .lane { grid-row: 1 / -1; border-left: 1px solid var(--line); background: repeating-linear-gradient(to bottom, rgba(255,255,255,.13) 0 1px, transparent 1px calc(var(--slot) * 4)); }
 .dg .lane.lb { background-color: rgba(201,33,30,.12); }
-.dg .ax { grid-column: 1; font-size: .72em; color: var(--muted); line-height: 1; transform: translateY(-.45em); text-align: right; padding-right: .45em; }
-.dg .axr { grid-column: 8; font-size: .72em; color: var(--muted); line-height: 1; transform: translateY(-.45em); text-align: left; padding-left: .45em; display: none; }
-.wk .day:not(:nth-child(3n+1)) .lh, .wk .day:not(:nth-child(3n+1)) .dg { grid-template-columns: 0 repeat(5, minmax(0, 1fr)) minmax(0, .85fr) 0; }
-/* Uhrzeiten auch rechts: am letzten Tag jeder Zeile (Mittwoch, Freitag) */
-.wk .day:nth-child(3n) .lh, .wk .day:nth-child(3n) .dg, .wk .day:nth-last-child(2) .lh, .wk .day:nth-last-child(2) .dg { grid-template-columns: 0 repeat(5, minmax(0, 1fr)) minmax(0, .85fr) 2.7em; }
-.wk .day:nth-child(3n) .axr, .wk .day:nth-last-child(2) .axr { display: block; }
-.wk .day:nth-child(3n) .nowline, .wk .day:nth-last-child(2) .nowline { right: 2.7em; }
-.wk .day:not(:nth-child(3n+1)) .ax, .wk .day:not(:nth-child(3n+1)) .lh span:first-child { visibility: hidden; }
+.dg .ax { grid-column: 1; font-size: .72em; color: var(--muted); line-height: 1; transform: translateY(-.45em); text-align: right; padding-right: .45em; display: none; }
+/* Zeitleisten außerhalb der Tageskacheln: links und rechts jeder Zeile, damit alle Tage gleich breit sind */
+.axcol { min-width: 0; }
+.axcol .ph { visibility: hidden; }
+.axcol h3 { margin: 0; line-height: 1.1; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid transparent; }
+.axg { display: grid; grid-template-rows: repeat(var(--n), var(--slot)); }
+.axg span { font-size: .72em; color: var(--muted); line-height: 1; transform: translateY(-.45em); white-space: nowrap; }
+.axcol.l .axg span { text-align: right; }
+.axcol.r .axg span { text-align: left; }
 .blk { margin: 1px; border-radius: 3px; padding: .12em .25em; overflow: hidden; cursor: pointer; z-index: 1;
   font-family: var(--display); font-weight: 700; font-size: .95em; line-height: 1.05; border: 0; text-align: center;
   display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -164,8 +165,7 @@ body {
 .blk.jt { margin-top: 0 !important; }
 .blk.other { opacity: .18; }
 .blk.mine { --glow: 0 0 0 3px var(--live); }
-.nowline { position: absolute; left: 2.7em; right: 0; height: 0; border-top: 2px solid var(--live); z-index: 5; pointer-events: none; box-shadow: 0 0 0 1px rgba(255,255,255,.85); }
-.wk .day:not(:nth-child(3n+1)) .nowline { left: 0; }
+.nowline { position: absolute; left: 0; right: 0; height: 0; border-top: 2px solid var(--live); z-index: 5; pointer-events: none; box-shadow: 0 0 0 1px rgba(255,255,255,.85); }
 .nowline::before { content: ""; position: absolute; left: -4px; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--live); }
 .legende h3 { margin: 0 0 .5em; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid var(--white); }
 .legende ul { list-style: none; margin: 0; padding: 0; columns: 2 12em; column-gap: 1em; }
@@ -212,13 +212,11 @@ body {
 
 @media (max-width: 800px) {
   .wk { grid-template-columns: minmax(0, 1fr); --slot: 1.25em; }
-  .wk .day:not(:nth-child(3n+1)) .lh, .wk .day:not(:nth-child(3n+1)) .dg,
-  .wk .day:nth-child(3n) .lh, .wk .day:nth-child(3n) .dg, .wk .day:nth-last-child(2) .lh, .wk .day:nth-last-child(2) .dg { grid-template-columns: 2.7em repeat(5, minmax(0, 1fr)) minmax(0, .85fr) 0; }
-  .wk .day:nth-child(3n) .axr, .wk .day:nth-last-child(2) .axr { display: none; }
-  .wk .day:nth-child(3n) .nowline, .wk .day:nth-last-child(2) .nowline { right: 0; }
-  .wk .day:not(:nth-child(3n+1)) .ax, .wk .day:not(:nth-child(3n+1)) .lh span:first-child { visibility: visible; }
-  .wk .day:not(:nth-child(3n+1)) .nowline { left: 2.7em; }
-  .day { margin-bottom: .8em; }
+  .axcol { display: none; }
+  .lh, .dg { grid-template-columns: 2.7em repeat(5, minmax(0, 1fr)) minmax(0, .85fr); }
+  .dg .ax { display: block; }
+  .nowline { left: 2.7em; }
+            .day { margin-bottom: .8em; }
   .tt thead { display: none; }
   .tt, .tt tbody, .tt tr, .tt td { display: block; }
   .tt tr { padding: .5em 0; border-bottom: 1px solid var(--line); }
@@ -234,7 +232,7 @@ body {
 .hell .view { background: #F4F7FC; color: #0B2A5C; }
 .hell .day h3, .hell .platzfig h3, .hell .tt th { border-bottom-color: var(--blue); color: var(--blue); }
 .hell .day.today h3 span, .hell .tt th.today span { background: var(--blue); color: #fff; }
-.hell .lh, .hell .dg .ax, .hell .dg .axr, .hell .wkhint, .hell .tt td.n small, .hell .tt .ut .fl { color: #4A5F86; }
+.hell .lh, .hell .dg .ax, .hell .axg span, .hell .wkhint, .hell .tt td.n small, .hell .tt .ut .fl { color: #4A5F86; }
 .hell .dg .lane { border-left-color: #C9D5EA; background: repeating-linear-gradient(to bottom, #C9D5EA 0 1px, #fff 1px calc(var(--slot) * 4)); }
 .hell .dg .lane.lb { background-color: #FBEDED; background-blend-mode: multiply; }
 .hell .blk { --edge: rgba(0,0,0,.28); --ew: 1px; }
@@ -640,10 +638,9 @@ function renderWoche(p, now) {
   const n = (ende - start) / 15, heute = wtag(now), tNow = now.getHours() * 60 + now.getMinutes();
   const wk = document.getElementById("wk");
   wk.style.setProperty("--days", tage.length);
-  wk.innerHTML = tage.map(tag => {
+  const kacheln = tage.map(tag => {
     let g = '';
-    for (let m = start; m < ende; m += 60) g += '<span class="ax" style="grid-row:' + ((m - start) / 15 + 1) + '">' + hm(m) + '</span>' +
-      '<span class="axr" style="grid-row:' + ((m - start) / 15 + 1) + '">' + hm(m) + '</span>';
+    for (let m = start; m < ende; m += 60) g += '<span class="ax" style="grid-row:' + ((m - start) / 15 + 1) + '">' + hm(m) + '</span>';
     LANES.forEach((l, i) => g += '<span class="lane' + (l === "Laufbahn" ? " lb" : "") + '" style="grid-column:' + (i + 2) + '"></span>');
     // Flächen sammeln; gleiche Mannschaft, zeitlich direkt anschließend und überlappende Bahnen = eine zusammenhängende Fläche
     const segs = [];
@@ -679,7 +676,20 @@ function renderWoche(p, now) {
     return '<section class="day' + (tag === heute ? " today" : "") + '"><h3><span>' + TAGE[tag % 7] + '</span></h3>' +
       '<div class="lh"><span></span>' + LANEKURZ.map(x => '<span>' + x + '</span>').join("") + '<span></span></div>' +
       '<div class="dg" style="--n:' + n + '">' + g + '</div></section>';
-  }).join("") + '<section class="platzfig"><h3>Aufteilung Sportplatz</h3>' + platzAufteilung() + '</section>';
+  });
+  kacheln.push('<section class="platzfig"><h3>Aufteilung Sportplatz</h3>' + platzAufteilung() + '</section>');
+  // je Zeile drei Kacheln, links und rechts davon die Zeitleiste (rechts nur, wenn daneben ein Tag steht)
+  let zeit = '';
+  for (let m = start; m < ende; m += 60) zeit += '<span style="grid-row:' + ((m - start) / 15 + 1) + '">' + hm(m) + '</span>';
+  const achse = (seite, mitZeit) => '<div class="axcol ' + seite + '" aria-hidden="true"><h3 class="ph">&nbsp;</h3><div class="lh ph"><span>&nbsp;</span></div>' +
+    '<div class="axg" style="--n:' + n + '">' + (mitZeit ? zeit : '') + '</div></div>';
+  let html = '';
+  for (let i = 0; i < kacheln.length; i += 3) {
+    const reihe = kacheln.slice(i, i + 3), rechtsTag = i + 2 < tage.length;
+    while (reihe.length < 3) reihe.push('<div></div>');
+    html += achse("l", true) + reihe.join("") + achse("r", rechtsTag);
+  }
+  wk.innerHTML = html;
   passePlatzfigAn();
 }
 
