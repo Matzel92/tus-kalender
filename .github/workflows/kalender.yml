@@ -8,6 +8,8 @@
 # Optionale Variable (Settings -> Secrets and variables -> Actions -> Variables):
 #   ZIEL_ORDNER    Unterordner im Startordner des SFTP-Benutzers, z. B. kalender
 #                  (fehlt sie, wird direkt in den Startordner hochgeladen)
+#   ANZEIGE_ORDNER Ordner für die Anzeigetafel im Startordner, Standard: Spiele
+#                  (spiele.tus-harpen.de zeigt auf /matz_dinge/Spiele)
 
 name: Spielplan auf IONOS aktualisieren
 
@@ -79,5 +81,40 @@ jobs:
             put spielplan.pdf;
             put spiele.json;
             put anzeige.html;
+            $LOGO
+            bye"
+
+      - name: Anzeige in eigenen Ordner hochladen (spiele.tus-harpen.de)
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          # Ordner im Startordner /matz_dinge; Groß-/Kleinschreibung beachten
+          ORDNER: ${{ vars.ANZEIGE_ORDNER || 'Spiele' }}
+        run: |
+          # .htaccess für die Anzeige: immer frische Daten, Spieldaten auch von anderen Seiten abrufbar
+          cat > spiele.htaccess <<'HT'
+          DirectoryIndex index.html
+          <IfModule mod_headers.c>
+          <FilesMatch "\.(html|json)$">
+          Header set Cache-Control "no-cache, must-revalidate"
+          </FilesMatch>
+          <Files "spiele.json">
+          Header set Access-Control-Allow-Origin "*"
+          </Files>
+          </IfModule>
+          HT
+          sed -i 's/^ *//' spiele.htaccess
+          LOGO=""; [ -f logo.png ] && LOGO="put logo.png;"
+          lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "
+            set sftp:auto-confirm yes;
+            set net:max-retries 2;
+            set net:timeout 30;
+            mkdir -p -f $ORDNER;
+            cd $ORDNER;
+            put spiele.json;
+            put anzeige.html -o index.html;
+            put anzeige.html;
+            put spiele.htaccess -o .htaccess;
             $LOGO
             bye"

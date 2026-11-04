@@ -448,7 +448,7 @@ function zeichnen() {
 
 // Zuerst die Datei neben dieser Seite (Webspace), sonst die Online-Adresse –
 // so funktioniert die Seite auch, wenn sie lokal auf einem Rechner geöffnet wird.
-const DATEN_QUELLEN = ["spiele.json", "https://kalender.tus-harpen.de/spiele.json"];
+const DATEN_QUELLEN = ["spiele.json", "https://spiele.tus-harpen.de/spiele.json", "https://kalender.tus-harpen.de/spiele.json"];
 let fehlversuche = 0;
 async function nachladen() {
   for (const url of DATEN_QUELLEN) {
