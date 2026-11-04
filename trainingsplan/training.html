@@ -169,7 +169,11 @@ body {
 .blk.jt { margin-top: 0 !important; }
 .blk.ueber { overflow-x: clip; overflow-y: visible; justify-content: flex-start; padding-top: .35em; z-index: 3; }
 .blk.other { opacity: .18; }
-.blk.mine { --glow: 0 0 0 3px var(--live); }
+.blk.mine { --g: var(--live); --glow: 0 0 0 3px var(--g); }
+/* zusammenhängende Flächen (Platzwechsel): an der Nahtstelle keine Umrandung, damit es ein Feld bleibt */
+.blk.mine.gb0 { --glow: -3px 0 0 0 var(--g), 3px 0 0 0 var(--g), 0 -3px 0 0 var(--g), -3px -3px 0 0 var(--g), 3px -3px 0 0 var(--g); }
+.blk.mine.gt0 { --glow: -3px 0 0 0 var(--g), 3px 0 0 0 var(--g), 0 3px 0 0 var(--g), -3px 3px 0 0 var(--g), 3px 3px 0 0 var(--g); }
+.blk.mine.gb0.gt0 { --glow: -3px 0 0 0 var(--g), 3px 0 0 0 var(--g); }
 .nowline { position: absolute; left: 0; right: 0; height: 0; border-top: 2px solid var(--live); z-index: 5; pointer-events: none; box-shadow: 0 0 0 1px rgba(255,255,255,.85); }
 .nowline::before { content: ""; position: absolute; left: -4px; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--live); }
 .legende h3 { margin: 0 0 .5em; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid var(--white); }
@@ -243,7 +247,7 @@ body {
 .hell .dg .lane { border-left-color: #C9D5EA; background: repeating-linear-gradient(to bottom, #C9D5EA 0 1px, #fff 1px calc(var(--slot) * 4)); }
 .hell .dg .lane.lb { background-color: #FBEDED; background-blend-mode: multiply; }
 .hell .blk { --edge: rgba(0,0,0,.28); --ew: 1px; }
-.hell .blk.mine { --glow: 0 0 0 3px #0E8A4C; }
+.hell .blk.mine { --g: #0E8A4C; }
 .hell .tt td { border-bottom-color: #D5DEEE; }
 .hell .hal h3 { border-bottom-color: var(--blue); color: var(--blue); }
 .hell .hal h3 small, .hell .leer { color: #4A5F86; }
@@ -669,13 +673,16 @@ function renderWoche(p, now) {
         const u = x.e, hoch = x.r2 - x.r1, breit = x.b - x.a + 1;
         const oben = gs.some(y => y !== x && y.r2 === x.r1 && y.a <= x.b && x.a <= y.b);
         const unten = gs.some(y => y !== x && y.r1 === x.r2 && y.a <= x.b && x.a <= y.b);
+        // Kante vollständig von der Nachbarfläche bedeckt? Dann dort keine Umrandung bei der Auswahl
+        const bedeckt = nb => { for (let l = x.a; l <= x.b; l++) if (!nb.some(y => y.a <= l && l <= y.b)) return false; return nb.length > 0; };
+        const untenVoll = bedeckt(gs.filter(y => y !== x && y.r1 === x.r2)), obenVoll = bedeckt(gs.filter(y => y !== x && y.r2 === x.r1));
         const meins = S.team && istMeins(u), anders = S.team && !istMeins(u);
         const r = (oben ? "0 0 " : "3px 3px ") + (unten ? "0 0" : "3px 3px");
         const lb = x.a === LANES.indexOf("Laufbahn");   // schmale Laufbahn: Zeiten untereinander
         const zeit = lb ? '<small class="zt">' + hm(von) + '–<wbr>' + hm(bis) + '</small>' : ((bis - von) / 15 >= 4 && hoch >= 2 ? '<small>' + hm(von) + '–<wbr>' + hm(bis) + '</small>' : '');
         const txt = x === traeger ? '<span class="nm">' + esc(u.kurz || u.team).replace(/\//g, "/<wbr>").replace(/fußball/gi, m => m.slice(0, 3) + "&shy;" + m.slice(3)) + '</span>' + zeit : '';
         const info = u.team + " · " + TAGE[tag % 7] + " " + hm(von) + "–" + hm(bis) + (gs.length > 1 ? " (" + gs.map(y => y.e.von + "–" + y.e.bis + " " + felderText(y.e.felder)).filter((v, i, a) => a.indexOf(v) === i).join(", ") + ")" : " · " + felderText(u.felder));
-        g += '<button type="button" class="blk' + (breit < 2 ? " s" : "") + (lb ? " lbk" : "") + (x === traeger && unten ? " ueber" : "") + (anders ? " other" : "") + (meins ? " mine" : "") + (unten ? " jb" : "") + (oben ? " jt" : "") + '" data-team="' + esc(u.mitglieder[0]) + '"' +
+        g += '<button type="button" class="blk' + (breit < 2 ? " s" : "") + (lb ? " lbk" : "") + (x === traeger && unten ? " ueber" : "") + (anders ? " other" : "") + (meins ? " mine" : "") + (unten ? " jb" : "") + (oben ? " jt" : "") + (untenVoll ? " gb0" : "") + (obenVoll ? " gt0" : "") + '" data-team="' + esc(u.mitglieder[0]) + '"' +
           ' style="grid-row:' + x.r1 + '/' + x.r2 + ';grid-column:' + (x.a + 2) + '/' + (x.b + 3) + ';background:' + u.farbe + ';color:' + kontrast(u.farbe) +
           ';margin-top:' + (oben ? 0 : 1) + 'px;margin-bottom:' + (unten ? 0 : 1) + 'px;border-radius:' + r + '"' +
           ' title="' + esc(info) + '" aria-label="' + esc(info) + '"' + (x === traeger ? '' : ' tabindex="-1"') + '>' + txt + '</button>';
