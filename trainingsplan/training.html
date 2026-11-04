@@ -177,6 +177,21 @@ body {
 .platzfig svg { display: block; width: 80%; height: calc(var(--slot) * 24 + 1.6em); margin: .3em auto 0; }   /* 80 % der Spaltenbreite, mittig */
 .platzfig text { font-family: var(--display); }
 
+/* Halle: je Halle eine Liste der Termine nach Wochentag */
+.hallen { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26em), 1fr)); gap: clamp(14px, 2vw, 36px); align-items: start; }
+.hal h3 { margin: 0; font-family: var(--display); font-weight: 600; font-size: 1.35em; letter-spacing: .03em; padding-bottom: .15em; border-bottom: 3px solid var(--white); line-height: 1.15; }
+.hal h3 small { display: block; font-family: var(--body); font-weight: 500; font-size: .62em; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.hu { display: grid; grid-template-columns: 2.6em 7.6em minmax(0, 1fr) auto; column-gap: .8em; align-items: center; padding: .5em 0; border-bottom: 1px solid var(--line); }
+.hu .tg { font-family: var(--display); font-weight: 700; font-size: 1.2em; text-transform: uppercase; }
+.hu .tm { font-family: var(--display); font-weight: 700; font-size: 1.2em; white-space: nowrap; }
+.hu .team { display: flex; align-items: center; gap: .55em; min-width: 0; font-weight: 600; }
+.hu .team .sw { flex: none; width: .55em; align-self: stretch; min-height: 1.4em; border-radius: 2px; }
+.hu.heute .tg span { background: var(--white); color: var(--blue); padding: 0 .25em; }
+.hu.other { opacity: .28; }
+.hu .state { font-size: .95em; }
+.leer { color: var(--muted); padding: 1em 0; }
+.tt .ut.hall .fl::before { content: "Halle · "; font-weight: 600; }
+
 /* Mannschaften: Tabelle Mannschaft × Wochentag */
 .ttwrap { overflow-x: auto; }
 .tt { width: 100%; border-collapse: collapse; }
@@ -184,7 +199,7 @@ body {
 .tt th.today span { background: var(--white); color: var(--blue); padding: 0 .3em; }
 .tt td { border-bottom: 1px solid var(--line); padding: .4em .5em; vertical-align: top; }
 .tt td.n { min-width: 11em; }
-.tt td.n b { font-family: var(--display); font-size: 1.25em; font-weight: 600; }
+.tt td.n b { font-family: var(--display); font-size: 1.25em; font-weight: 600; white-space: nowrap; }
 .tt td.n .sw { display: inline-block; width: .55em; height: 1.3em; border-radius: 2px; vertical-align: -.25em; margin-right: .5em; }
 .tt td.n small { display: block; color: var(--muted); margin-left: 1.05em; }
 .tt .ut + .ut { margin-top: .35em; }
@@ -223,6 +238,11 @@ body {
 .hell .blk { --edge: rgba(0,0,0,.28); --ew: 1px; }
 .hell .blk.mine { --glow: 0 0 0 3px #0E8A4C; }
 .hell .tt td { border-bottom-color: #D5DEEE; }
+.hell .hal h3 { border-bottom-color: var(--blue); color: var(--blue); }
+.hell .hal h3 small, .hell .leer { color: #4A5F86; }
+.hell .hu { border-bottom-color: #D5DEEE; }
+.hell .hu .tg, .hell .hu .tm { color: #0B2A5C; }
+.hell .hu.heute .tg span { background: var(--blue); color: #fff; }
 .hell .tt .ut .tm { color: #0B2A5C; }
 .hell .tt td[data-tag]::before { color: #4A5F86; }
 .hell .tt tr { border-bottom-color: #D5DEEE; }
@@ -271,8 +291,12 @@ body {
   .tabs #plan { flex: 0 0 auto; }
   /* Reiter in einer Zeile, gleich breit */
   .blk.lbk .zt { white-space: normal; }
-  .tablist { flex: 1 1 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: .3em; }
-  .tablist button { font-size: clamp(11px, 3.6vw, 15px); letter-spacing: 0; padding: .4em .1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tablist { flex: 1 1 100%; display: flex; flex-wrap: nowrap; gap: .3em; }
+  .tablist button[hidden] { display: none; }
+  .hu { grid-template-columns: 2.2em minmax(0, 1fr) auto; row-gap: .15em; }
+  .hu .team { grid-column: 2 / -1; grid-row: 2; }
+  .hu .state { grid-column: 3; grid-row: 1; }
+  .tablist button { flex: 1 1 auto; min-width: 0; font-size: clamp(10px, 3.3vw, 15px); letter-spacing: 0; padding: .4em .1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
 .hint { color: var(--white); background: var(--blue-row); padding: .1em .6em; border-radius: 3px; }
 :fullscreen .ctl.full { display: none; }
@@ -303,6 +327,7 @@ body {
     <div class="tablist" role="tablist" aria-label="Ansicht">
       <button type="button" role="tab" data-v="woche" aria-selected="true">Wochenplan</button>
       <button type="button" role="tab" data-v="mannschaften" aria-selected="false">Mannschaften</button>
+      <button type="button" role="tab" data-v="halle" aria-selected="false" id="tabHalle">Halle</button>
       <button type="button" role="tab" data-v="platz" aria-selected="false">Platz jetzt</button>
     </div>
     <span class="spacer"></span>
@@ -321,6 +346,10 @@ body {
 
   <main class="view pad" id="viewTeams" hidden>
     <div class="ttwrap"><table class="tt" id="tt"></table></div>
+  </main>
+
+  <main class="view pad" id="viewHalle" hidden>
+    <div class="hallen" id="hallen"></div>
   </main>
 
   <main class="main pad" id="viewPlatz" hidden>
@@ -572,8 +601,13 @@ function render() {
 
   renderWoche(p, now);
   renderTeams(p, now);
+  renderHalle(p, now);
+  const hatHalle = (p.halle || []).length > 0;
+  document.getElementById("tabHalle").hidden = !hatHalle;
+  if (S.ansicht === "halle" && !hatHalle) S.ansicht = "woche";
   document.getElementById("viewWoche").hidden = S.ansicht !== "woche";
   document.getElementById("viewTeams").hidden = S.ansicht !== "mannschaften";
+  document.getElementById("viewHalle").hidden = S.ansicht !== "halle";
   document.getElementById("viewPlatz").hidden = S.ansicht !== "platz";
   document.querySelectorAll(".tablist button").forEach(b => b.setAttribute("aria-selected", b.dataset.v === S.ansicht));
   passePlatzfigAn();
@@ -681,7 +715,8 @@ function renderTeams(p, now) {
   let h = '<thead><tr><th>Mannschaft</th>' + tage.map(t => '<th' + (t === heute ? ' class="today"' : '') + '><span>' + TAGE[t % 7] + '</span></th>').join("") + '</tr></thead><tbody>';
   for (const n of namen) {
     const es = p.einheiten.filter(e => e.mitglieder.includes(n));
-    const anzahl = es.filter(e => !es.some(f => f.tag === e.tag && f.bis === e.von)).length;   // Platzwechsel zählt nicht als eigenes Training
+    const hs = (p.halle || []).filter(e => e.mitglieder.includes(n));
+    const anzahl = es.filter(e => !es.some(f => f.tag === e.tag && f.bis === e.von)).length + hs.length;   // Platzwechsel zählt nicht als eigenes Training
     h += '<tr' + (S.team === n ? ' class="sel"' : '') + '><td class="n"><span class="sw" style="background:' + farbeVon(n) + '"></span><b>' + esc(n) + '</b>' +
       '<small>' + (anzahl ? anzahl + "× pro Woche" : "kein Training") + '</small></td>';
     for (const t of tage) {
@@ -693,11 +728,35 @@ function renderTeams(p, now) {
         const ort = k.map((e, i) => (i ? "ab " + e.von + " " : "") + felderText(e.felder)).join(", ");
         return '<div class="ut"><span class="tm">' + k[0].von + '–' + k[k.length - 1].bis + '</span>' +
           '<span class="fl">' + esc(ort) + (mit.length ? ' · mit ' + esc(mit.join(", ")) : '') + '</span></div>';
+      }).join("") + hs.filter(e => e.tag === t).map(e => {
+        const mit = e.mitglieder.filter(m => m !== n);
+        return '<div class="ut hall"><span class="tm">' + e.von + '–' + e.bis + '</span><span class="fl">' + esc(e.ort) + (mit.length ? ' · mit ' + esc(mit.join(", ")) : '') + '</span></div>';
       }).join("") + '</td>';
     }
     h += '</tr>';
   }
   document.getElementById("tt").innerHTML = h + '</tbody>';
+}
+
+/* ---------- Halle ---------- */
+function renderHalle(p, now) {
+  const el = document.getElementById("hallen"), hs = p.halle || [];
+  if (!hs.length) { el.innerHTML = '<p class="leer">Im ' + esc(p.saison || "") + 'plan gibt es kein Hallentraining.</p>'; return; }
+  const heute = wtag(now), tNow = now.getHours() * 60 + now.getMinutes(), live = !S.plan;
+  const orte = [...new Set(hs.map(h => h.ort))];
+  el.innerHTML = orte.map(ort => {
+    const [name, ...rest] = ort.split(",");
+    return '<section class="hal"><h3>' + esc(name.trim()) + (rest.length ? '<small>' + esc(rest.join(",").trim()) + '</small>' : '') + '</h3>' +
+      hs.filter(h => h.ort === ort).map(h => {
+        const v = min(h.von), b = min(h.bis), istHeute = live && h.tag === heute;
+        let st = '';
+        if (istHeute && v <= tNow && tNow < b) st = '<span class="state live">Läuft</span>';
+        else if (istHeute && v > tNow && v - tNow <= 60) st = '<span class="state soon">in ' + (v - tNow) + ' Min</span>';
+        return '<div class="hu' + (istHeute ? ' heute' : '') + (S.team && !h.mitglieder.includes(S.team) ? ' other' : '') + '">' +
+          '<span class="tg"><span>' + KURZ[h.tag % 7] + '</span></span><span class="tm">' + h.von + '–' + h.bis + '</span>' +
+          '<span class="team"><span class="sw" style="background:' + h.farbe + '"></span><span>' + esc(h.team) + '</span></span>' + st + '</div>';
+      }).join("") + '</section>';
+  }).join("");
 }
 
 function fuelleAuswahl() {
@@ -745,7 +804,7 @@ document.getElementById("btnFull").addEventListener("click", () => {
   const el = document.documentElement;
   try { if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen().catch(() => {}); } catch (e) {}
 });
-const ANSICHTEN = ["woche", "mannschaften", "platz"];
+const ANSICHTEN = ["woche", "mannschaften", "halle", "platz"];
 function setHash() { try { history.replaceState(null, "", "#" + S.ansicht); } catch (e) {} }
 function merken() { try { localStorage.setItem("tp-team", S.team); } catch (e) {} }
 

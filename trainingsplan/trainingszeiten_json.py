@@ -6,6 +6,7 @@ Liest die Pflegedatei:
   Blatt "Eingabe":       je Mannschaft eine Zeile; je Wochentag von/bis/Ort, dazu "Zusatz 1/2" (Tag, von, bis, Ort, nur im)
   Blatt "Mannschaften":  Name, Kurzname, Farbe, Schriftfarbe (Reihenfolge = Anzeige-Reihenfolge)
   Blatt "Pläne":         Plan (Sommer/Winter), Überschrift, gültig von, gültig bis (mehrere Zeilen je Plan möglich)
+  Blatt "Halle" (optional): je Zeile Mannschaft, Tag (Mo–So), von, bis, Halle, nur im (leer/Sommer/Winter)
 Mannschaften, die zur selben Zeit auf demselben Platzbereich trainieren, werden zu einer Einheit zusammengefasst.
 
 Benötigt: pip install openpyxl
@@ -86,6 +87,19 @@ def main():
             if tg or v or b or o:
                 if not (str(tg).strip()[:2] in KT and v and b and felder(o)): fehler.append(f"{team}: Zusatz unvollständig"); continue
                 roh.append((str(p).strip() if p else None, team, KT[str(tg).strip()[:2]], v, b, felder(o)))
+    # Hallenzeiten (optional)
+    halle_roh = []
+    if "Halle" in wb.sheetnames:
+        wh = wb["Halle"]
+        hh = next((r for r in range(1, 15) if str(wh.cell(r, 1).value or "").strip() == "Mannschaft"), None)
+        if hh:
+            for r in range(hh + 1, wh.max_row + 1):
+                team, tg, v, b, ort, p = (wh.cell(r, c).value for c in range(1, 7))
+                if not team: continue
+                v, b = hhmm(v), hhmm(b)
+                if not (str(tg or "").strip()[:2] in KT and v and b and ort):
+                    fehler.append(f"Halle: {team} unvollständig"); continue
+                halle_roh.append((str(p).strip() if p else None, str(team).strip(), KT[str(tg).strip()[:2]], v, b, str(ort).strip()))
     order = {t["name"]: i for i, t in enumerate(teams)}
     out = []
     for pname, pinfo in plaene.items():
@@ -105,12 +119,23 @@ def main():
             einheiten.append(dict(tag=tag, team=name, kurz=kurz,
                                   felder=list(f), von=v, bis=b, farbe=ti["farbe"], text=ti["text"], mitglieder=mitgl))
         einheiten.sort(key=lambda e: (e["tag"], e["von"], FELDER.index(e["felder"][0])))
+        hg = {}
+        for (p, team, tag, v, b, ort) in halle_roh:
+            if p and p != pname: continue
+            hg.setdefault((tag, v, b, ort), []).append(team)
+        halle = []
+        for (tag, v, b, ort), mitgl in hg.items():
+            mitgl = sorted(set(mitgl), key=lambda n: order.get(n, 999))
+            ti = tinfo.get(mitgl[0], dict(farbe="#BFBFBF", text="#000000"))
+            halle.append(dict(tag=tag, von=v, bis=b, ort=ort, team=" & ".join(mitgl),
+                              kurz="/".join(tinfo.get(m, {}).get("kurz", m) for m in mitgl), farbe=ti["farbe"], mitglieder=mitgl))
+        halle.sort(key=lambda h: (h["tag"], h["von"], h["ort"]))
         out.append(dict(blatt=pname, titel=pinfo["titel"], saison=pname, gueltig=sorted(pinfo["gueltig"]),
                         gueltigText="gültig " + " und ".join("vom %s bis %s" % (date.fromisoformat(x).strftime("%d.%m.%Y"), date.fromisoformat(y).strftime("%d.%m.%Y")) for x, y in sorted(pinfo["gueltig"])),
-                        einheiten=einheiten))
+                        einheiten=einheiten, halle=halle))
     res = dict(erzeugt=datetime.now().isoformat(timespec="minutes"), mannschaften=teams, plaene=out)
     with open(a.out, "w", encoding="utf-8") as fh: json.dump(res, fh, ensure_ascii=False, indent=1)
-    for p in out: print(f"{p['saison']}: {len(p['einheiten'])} Einheiten, gültig {p['gueltig']}")
+    for p in out: print(f"{p['saison']}: {len(p['einheiten'])} Einheiten, {len(p['halle'])} Hallentermine, gültig {p['gueltig']}")
     for f in fehler: print("WARNUNG:", f, file=sys.stderr)
 
 if __name__ == "__main__":
