@@ -382,7 +382,7 @@ const ZONEN = {
   Kleinfeld: K, Laufbahn: T
 };
 const VIEWBOX = "0 0 312 500";
-function grundriss() {
+function grundriss(ohneKreise) {   // ohneKreise: Kreise zeichnet der Aufrufer selbst (gestreckte Grafik)
   const L = 'stroke="var(--grass-line)" stroke-width="1.5" fill="none" vector-effect="non-scaling-stroke"';
   const sx = P.w / 68, sy = P.h / 105;
   const pw = 40.32 * sx, pd = 16.5 * sy, gw = 18.32 * sx, gd = 5.5 * sy, ps = 11 * sy, R = 9.15 * sy;
@@ -399,7 +399,7 @@ function grundriss() {
   // Großfeld
   s += '<rect x="' + (P.x + .75) + '" y="' + (P.y + .75) + '" width="' + (P.w - 1.5) + '" height="' + (P.h - 1.5) + '" ' + L + '/>';
   s += '<line x1="' + P.x + '" y1="' + PY + '" x2="' + (P.x + P.w) + '" y2="' + PY + '" ' + L + '/>';
-  s += '<circle cx="' + PX + '" cy="' + PY + '" r="' + R + '" ' + L + '/><circle cx="' + PX + '" cy="' + PY + '" r="1.8" fill="var(--grass-line)"/>';
+  if (!ohneKreise) s += '<circle cx="' + PX + '" cy="' + PY + '" r="' + R + '" ' + L + '/><circle cx="' + PX + '" cy="' + PY + '" r="1.8" fill="var(--grass-line)"/>';
   for (const [y0, dir] of [[P.y + .75, 1], [P.y + P.h - .75, -1]]) {
     s += '<rect x="' + (PX - pw / 2) + '" y="' + (dir > 0 ? y0 : y0 - pd) + '" width="' + pw + '" height="' + pd + '" ' + L + '/>';
     s += '<rect x="' + (PX - gw / 2) + '" y="' + (dir > 0 ? y0 : y0 - gd) + '" width="' + gw + '" height="' + gd + '" ' + L + '/>';
@@ -411,7 +411,7 @@ function grundriss() {
   const kx = K.x + K.w / 2, ky = K.y + K.h / 2;
   s += '<rect x="' + (K.x + .75) + '" y="' + (K.y + .75) + '" width="' + (K.w - 1.5) + '" height="' + (K.h - 1.5) + '" ' + L + '/>';
   s += '<line x1="' + kx + '" y1="' + K.y + '" x2="' + kx + '" y2="' + (K.y + K.h) + '" ' + L + '/>';
-  s += '<circle cx="' + kx + '" cy="' + ky + '" r="11" ' + L + '/>';
+  if (!ohneKreise) s += '<circle cx="' + kx + '" cy="' + ky + '" r="11" ' + L + '/>';
   s += '<rect x="' + (K.x + .75) + '" y="' + (ky - 23) + '" width="18" height="46" ' + L + '/><rect x="' + (K.x + K.w - 18.75) + '" y="' + (ky - 23) + '" width="18" height="46" ' + L + '/>';
   return s;
 }
@@ -618,12 +618,17 @@ function renderWoche(p, now) {
 function platzAufteilung(seitenverh) {
   // seitenverh = Breite/Höhe der verfügbaren Fläche; die Grafik wird waagerecht gestreckt, Schrift bleibt unverzerrt
   const H = 500, W = Math.max(312, H * (seitenverh || 312 / 500)), f = W / 312;
-  let g = grundriss();
+  let g = grundriss(true);
   for (const q of ["HL", "VR"]) { const z = ZONEN[q]; g += '<rect x="' + z.x + '" y="' + z.y + '" width="' + z.w + '" height="' + z.h + '" fill="#000" fill-opacity=".10"/>'; }
   g += '<line x1="' + PX + '" y1="' + P.y + '" x2="' + PX + '" y2="' + (P.y + P.h) + '" stroke="#fff" stroke-width="2.5" stroke-dasharray="9 6" vector-effect="non-scaling-stroke"/>';
   g += '<line x1="' + P.x + '" y1="' + PY + '" x2="' + (P.x + P.w) + '" y2="' + PY + '" stroke="#fff" stroke-width="2.5" stroke-dasharray="9 6" vector-effect="non-scaling-stroke"/>';
   const lab = (x, y, txt, fs) => '<text x="' + (x * f) + '" y="' + y + '" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="' + fs + '" fill="#fff">' + txt + '</text>';
   let s = '<g transform="scale(' + f + ' 1)">' + g + '</g>';
+  // Mittelkreise rund lassen (außerhalb der Streckung)
+  const m = (1 + f) / 2;   // Größe zwischen ungestreckt und gestreckt, damit der Kreis zur Feldbreite passt
+  const R = 9.15 * P.h / 105 * m, KL = 'stroke="var(--grass-line)" stroke-width="1.5" fill="none"';
+  s += '<circle cx="' + PX * f + '" cy="' + PY + '" r="' + R + '" ' + KL + '/><circle cx="' + PX * f + '" cy="' + PY + '" r="1.8" fill="var(--grass-line)"/>';
+  s += '<circle cx="' + (K.x + K.w / 2) * f + '" cy="' + (K.y + K.h / 2) + '" r="' + Math.min(11 * m, K.h / 2 - 6) + '" ' + KL + '/>';
   for (const q of ["HL", "HR", "VL", "VR"]) { const z = ZONEN[q]; s += lab(z.x + z.w / 2, z.y + z.h / 2, q, 44); }
   s += lab(K.x + K.w / 2, K.y + K.h / 2, "Kleinfeld", Math.min(40, 24 * f));
   s += '<text transform="translate(' + ((T.x + T.w / 2) * f) + ' ' + (T.y + T.h / 2) + ') rotate(-90)" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="' + Math.min(34, 19 * f) + '" fill="#fff">Laufbahn</text>';
