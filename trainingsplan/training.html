@@ -506,7 +506,7 @@ function render() {
   const gText = p.gueltig.map(([a, b]) => de(a) + "–" + de(b)).join(" und ");
   const istAktuell = p.blatt === aktuellerPlan(now).blatt;
   document.getElementById("gueltig").innerHTML = '<span>gültig ' + esc(p.gueltig.map(([a, b]) => "vom " + de(a) + " bis " + de(b)).join(" und ")) + '</span>' +
-    (istAktuell ? '' : '<span class="warn">nicht der aktuelle Plan</span>');
+    (istAktuell ? '' : '<span class="warn">zur Zeit nicht der gültige Plan</span>');
   document.getElementById("planInfo").textContent = (p.saison ? p.saison + "plan" : p.titel) + " · gültig " + gText;
   // Hinweis auf Planwechsel in den nächsten 14 Tagen
   const in14 = new Date(now.getTime() + 14 * 864e5);
