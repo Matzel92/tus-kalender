@@ -151,6 +151,7 @@ body {
   font-family: var(--display); font-weight: 700; font-size: .95em; line-height: 1.05; border: 0; text-align: center;
   display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .blk.s { font-size: .85em; }
+.blk.s.xs { font-size: min(.85em, max(.66em, 1.05vw)); }   /* lange Namen in schmalen Spalten etwas kleiner */
 .blk.lbk { padding: 0 1px; font-size: min(.85em, calc(var(--slot) * 1.05)); line-height: 1; }
 .blk.lbk .zt { font-size: .78em; line-height: 1; margin-top: .1em; letter-spacing: -.03em; white-space: nowrap; }
 .blk { word-break: normal; overflow-wrap: normal; hyphens: none; }
@@ -163,6 +164,7 @@ body {
 .blk.jb { box-shadow: inset var(--ew) 0 0 var(--edge), inset calc(-1 * var(--ew)) 0 0 var(--edge), inset 0 var(--ew) 0 var(--edge), var(--glow);
   margin-bottom: calc(-1 * var(--ew)) !important; z-index: 2; }
 .blk.jt { margin-top: 0 !important; }
+.blk.ueber { overflow-x: clip; overflow-y: visible; justify-content: flex-start; padding-top: .35em; z-index: 3; }
 .blk.other { opacity: .18; }
 .blk.mine { --glow: 0 0 0 3px var(--live); }
 .nowline { position: absolute; left: 0; right: 0; height: 0; border-top: 2px solid var(--live); z-index: 5; pointer-events: none; box-shadow: 0 0 0 1px rgba(255,255,255,.85); }
@@ -654,7 +656,8 @@ function renderWoche(p, now) {
     segs.forEach((x, i) => (gruppen[root(i)] = gruppen[root(i)] || []).push(x));
     for (const gs of Object.values(gruppen)) {
       const von = Math.min(...gs.map(x => min(x.e.von))), bis = Math.max(...gs.map(x => min(x.e.bis)));
-      const traeger = gs.reduce((m, x) => (x.r2 - x.r1) * (x.b - x.a + 1) > (m.r2 - m.r1) * (m.b - m.a + 1) ? x : m, gs[0]);
+      // Beschriftung im obersten Abschnitt; reicht der Platz nicht, läuft sie in den Abschnitt darunter weiter (gleiche Farbe)
+      const traeger = gs.reduce((m, x) => x.r1 < m.r1 || (x.r1 === m.r1 && (x.b - x.a) > (m.b - m.a)) ? x : m, gs[0]);
       const felderAlle = [...new Set(gs.flatMap(x => x.e.felder))];
       for (const x of gs) {
         const u = x.e, hoch = x.r2 - x.r1, breit = x.b - x.a + 1;
@@ -666,7 +669,7 @@ function renderWoche(p, now) {
         const zeit = lb ? '<small class="zt">' + hm(von) + '–' + hm(bis) + '</small>' : ((bis - von) / 15 >= 4 && hoch >= 2 ? '<small>' + hm(von) + '–' + hm(bis) + '</small>' : '');
         const txt = x === traeger ? '<span class="nm">' + esc(u.kurz || u.team).replace(/\//g, "/<wbr>") + '</span>' + zeit : '';
         const info = u.team + " · " + TAGE[tag % 7] + " " + hm(von) + "–" + hm(bis) + (gs.length > 1 ? " (" + gs.map(y => y.e.von + "–" + y.e.bis + " " + felderText(y.e.felder)).filter((v, i, a) => a.indexOf(v) === i).join(", ") + ")" : " · " + felderText(u.felder));
-        g += '<button type="button" class="blk' + (breit < 2 ? " s" : "") + (lb ? " lbk" : "") + (anders ? " other" : "") + (meins ? " mine" : "") + (unten ? " jb" : "") + (oben ? " jt" : "") + '" data-team="' + esc(u.mitglieder[0]) + '"' +
+        g += '<button type="button" class="blk' + (breit < 2 ? " s" : "") + (lb ? " lbk" : "") + (x === traeger && unten ? " ueber" : "") + (breit < 2 && Math.max(...(u.kurz || u.team).split(/[ \/]/).map(w => w.length)) > 6 ? " xs" : "") + (anders ? " other" : "") + (meins ? " mine" : "") + (unten ? " jb" : "") + (oben ? " jt" : "") + '" data-team="' + esc(u.mitglieder[0]) + '"' +
           ' style="grid-row:' + x.r1 + '/' + x.r2 + ';grid-column:' + (x.a + 2) + '/' + (x.b + 3) + ';background:' + u.farbe + ';color:' + kontrast(u.farbe) +
           ';margin-top:' + (oben ? 0 : 1) + 'px;margin-bottom:' + (unten ? 0 : 1) + 'px;border-radius:' + r + '"' +
           ' title="' + esc(info) + '" aria-label="' + esc(info) + '"' + (x === traeger ? '' : ' tabindex="-1"') + '>' + txt + '</button>';
