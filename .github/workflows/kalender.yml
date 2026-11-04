@@ -4,7 +4,10 @@
 #   SFTP_HOST      z. B. access-1234567890.webspace-host.com
 #   SFTP_USER      SFTP-Benutzername aus dem IONOS-Kundenbereich
 #   SFTP_PASSWORD  zugehöriges Passwort
-#   (kein SFTP_DIR nötig: hochgeladen wird in den Startordner des SFTP-Benutzers)
+#
+# Optionale Variable (Settings -> Secrets and variables -> Actions -> Variables):
+#   ZIEL_ORDNER    Unterordner im Startordner des SFTP-Benutzers, z. B. kalender
+#                  (fehlt sie, wird direkt in den Startordner hochgeladen)
 
 name: Spielplan auf IONOS aktualisieren
 
@@ -55,6 +58,9 @@ jobs:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_USER: ${{ secrets.SFTP_USER }}
           LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          # Unterordner im Startordner des SFTP-Benutzers. Leer = direkt in den Startordner.
+          # Einstellbar unter Settings -> Secrets and variables -> Actions -> Variables (ZIEL_ORDNER).
+          ZIEL_ORDNER: ${{ vars.ZIEL_ORDNER }}
         run: |
           # Sorgt dafür, dass der Webserver die Datei als Kalender ausliefert
           printf 'AddType "text/calendar; charset=utf-8" .ics\n' > .htaccess
@@ -62,10 +68,12 @@ jobs:
           printf '<IfModule mod_headers.c>\n<Files "spiele.json">\nHeader set Access-Control-Allow-Origin "*"\n</Files>\n</IfModule>\n' >> .htaccess
           # Logo nur hochladen, wenn es im Repository liegt
           LOGO=""; [ -f logo.png ] && LOGO="put logo.png;"
+          ORDNER=""; [ -n "$ZIEL_ORDNER" ] && ORDNER="mkdir -p -f $ZIEL_ORDNER; cd $ZIEL_ORDNER;"
           lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "
             set sftp:auto-confirm yes;
             set net:max-retries 2;
             set net:timeout 30;
+            $ORDNER
             put tus-harpen.ics;
             put .htaccess;
             put spielplan.pdf;
