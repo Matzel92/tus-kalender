@@ -4,8 +4,12 @@ name: Webspace prüfen (Ordnerübersicht)
 on:
   workflow_dispatch:
     inputs:
-      leerer_ordner:
-        description: "Optional: LEEREN Ordner entfernen (Pfad relativ zu /matz_dinge, z. B. kalender/kalender). Nicht-leere Ordner bleiben unangetastet."
+      ordner_loeschen:
+        description: "Optional: Ordner samt Inhalt löschen (Pfad relativ zu /matz_dinge, z. B. kalender/kalender). Nur zusammen mit der Bestätigung."
+        required: false
+        default: ""
+      bestaetigung:
+        description: "Zum Löschen hier LOESCHEN eintragen"
         required: false
         default: ""
 
@@ -13,27 +17,32 @@ jobs:
   liste:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      SFTP_HOST: ${{ secrets.SFTP_HOST }}
+      SFTP_USER: ${{ secrets.SFTP_USER }}
+      LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+      V: "set sftp:auto-confirm yes; set net:timeout 30; set color:use-color false;"
     steps:
       - name: lftp installieren
         run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
-      - name: Leeren Ordner entfernen (nur wenn angegeben)
-        if: ${{ inputs.leerer_ordner != '' }}
-        env:
-          SFTP_HOST: ${{ secrets.SFTP_HOST }}
-          SFTP_USER: ${{ secrets.SFTP_USER }}
-          LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
-          ORDNER: ${{ inputs.leerer_ordner }}
+
+      - name: Übersicht vorher (mit Datum)
         run: |
-          case "$ORDNER" in *..*|/*) echo "::error::Nur Pfade innerhalb von /matz_dinge erlaubt"; exit 1;; esac
-          V="set sftp:auto-confirm yes; set net:timeout 30; set color:use-color false;"
-          INHALT=$(lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "$V cls -1a $ORDNER/; bye" | tr -d '\r' | grep -vE '(^|/)\.\.?/?$' | grep -v '^[[:space:]]*$' || true)
-          echo "Inhalt von $ORDNER:"; echo "$INHALT" | od -c | head -5
-          if [ -n "$INHALT" ]; then echo "::error::$ORDNER ist nicht leer – wird nicht entfernt."; exit 1; fi
+          lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "$V find --maxdepth=5 -l .; bye"
+
+      - name: Ordner löschen (nur mit Bestätigung)
+        if: ${{ inputs.ordner_loeschen != '' }}
+        env:
+          ORDNER: ${{ inputs.ordner_loeschen }}
+          OK: ${{ inputs.bestaetigung }}
+        run: |
+          case "$ORDNER" in ""|.|./|*..*|/*) echo "::error::Nur Unterordner innerhalb von /matz_dinge erlaubt"; exit 1;; esac
+          case "$ORDNER" in kalender|kalender/|trainingsplan|trainingsplan/) echo "::error::Projektordner werden nicht gelöscht"; exit 1;; esac
+          [ "$OK" = "LOESCHEN" ] || { echo "::error::Bestätigung fehlt (LOESCHEN)"; exit 1; }
           lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "$V rm -r $ORDNER; bye"
-      - name: Ordner auflisten (3 Ebenen)
-        env:
-          SFTP_HOST: ${{ secrets.SFTP_HOST }}
-          SFTP_USER: ${{ secrets.SFTP_USER }}
-          LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          echo "Gelöscht: /matz_dinge/$ORDNER"
+
+      - name: Übersicht nachher
+        if: ${{ inputs.ordner_loeschen != '' }}
         run: |
-          lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "set sftp:auto-confirm yes; set net:timeout 30; find --maxdepth=3 .; bye"
+          lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "$V find --maxdepth=5 .; bye"
