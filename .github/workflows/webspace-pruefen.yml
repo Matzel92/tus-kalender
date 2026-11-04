@@ -1,0 +1,20 @@
+# Nur manuell: zeigt, was im SFTP-Startordner (/matz_dinge) liegt – zum Prüfen und Aufräumen.
+name: Webspace prüfen (Ordnerübersicht)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  liste:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: lftp installieren
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+      - name: Ordner auflisten (3 Ebenen)
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          LFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+        run: |
+          lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "set sftp:auto-confirm yes; set net:timeout 30; find --maxdepth=3 .; bye"
