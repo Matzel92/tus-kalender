@@ -560,74 +560,89 @@ def write_json(matches: list[Match], path: Path) -> None:
     os.replace(tmp, path)
 
 
-# Freigestellte Wappen (heller Hintergrund entfernt) tragen eine eigene Endung, damit sie
-# neben den unveränderten Originalen liegen und beim Hochladen als neue Dateien gelten.
-WAPPEN_ENDUNG = ".f.png"
+# Freigestellte Wappen (Hintergrund entfernt) tragen eine eigene Endung, damit sie neben
+# den unveränderten Originalen liegen und beim Hochladen als neue Dateien gelten.
+# Bei Änderungen am Verfahren die Endung hochzählen (f2, f3, …).
+WAPPEN_ENDUNG = ".f2.png"
 
 
 def freistellen(quelle: Path, ziel: Path) -> None:
-    """Hellen, einfarbigen Hintergrund eines Wappens durchsichtig machen.
+    """Einfarbigen weißen oder schwarzen Hintergrund eines Wappens durchsichtig machen.
 
-    Von den Bildrändern aus werden alle zusammenhängenden Pixel entfernt, die der
-    (hellen) Eckfarbe ähneln; das Innere des Wappens bleibt unberührt, auch wenn es weiß ist.
-    Klappt das nicht (kein Pillow, Bild ohne hellen Rand), wird das Original kopiert.
+    Vom Bildrand aus wird zuerst der bereits durchsichtige Teil übernommen. Danach wird
+    höchstens zweimal die Farbe des äußeren Rings bestimmt; ist sie fast weiß oder fast
+    schwarz und ziemlich einheitlich, werden alle zusammenhängenden Pixel dieser Farbe
+    entfernt (z. B. weißer Rahmen, darin schwarzes Quadrat). Farbige Ränder bleiben stehen,
+    das Innere des Wappens und seine weiße Umrandung auch. Klappt etwas nicht, wird das Original kopiert.
     """
     try:
         from PIL import Image
-    except ImportError:
-        ziel.write_bytes(quelle.read_bytes())
-        return
-    try:
         bild = Image.open(quelle).convert("RGBA")
     except Exception:
         ziel.write_bytes(quelle.read_bytes())
         return
     b, h = bild.size
     px = bild.load()
-    ecken = [px[0, 0], px[b - 1, 0], px[0, h - 1], px[b - 1, h - 1]]
-    deckend = [e for e in ecken if e[3] > 200]
-    if not deckend:
-        bild.save(ziel, optimize=True)   # Hintergrund ist schon durchsichtig
-        return
-    grund = tuple(sorted(e[i] for e in deckend)[len(deckend) // 2] for i in range(3))
-    if min(grund) < 200:                 # farbiger Rand: lieber nichts verändern
-        ziel.write_bytes(quelle.read_bytes())
-        return
-
-    def abstand(p):
-        return max(abs(p[0] - grund[0]), abs(p[1] - grund[1]), abs(p[2] - grund[2]))
-
+    TOL = 40
     weg = bytearray(b * h)
-    stapel = [(x, y) for x in range(b) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, b - 1)]
-    while stapel:
-        x, y = stapel.pop()
-        i = y * b + x
-        if weg[i]:
-            continue
-        p = px[x, y]
-        if p[3] > 20 and abstand(p) > 40:
-            continue
-        weg[i] = 1
-        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
-            if 0 <= nx < b and 0 <= ny < h and not weg[ny * b + nx]:
-                stapel.append((nx, ny))
-    if sum(weg) > 0.8 * b * h:           # fast alles wäre weg: Wappen selbst ist hell/quadratisch
-        ziel.write_bytes(quelle.read_bytes())
-        return
+
+    def abstand(p, g):
+        return max(abs(p[0] - g[0]), abs(p[1] - g[1]), abs(p[2] - g[2]))
+
+    def flut(start, grund):
+        stapel = list(start)
+        while stapel:
+            i = stapel.pop()
+            if weg[i]:
+                continue
+            x, y = i % b, i // b
+            p = px[x, y]
+            if p[3] > 20 and (grund is None or abstand(p, grund) > TOL):
+                continue
+            weg[i] = 1
+            if x > 0: stapel.append(i - 1)
+            if x < b - 1: stapel.append(i + 1)
+            if y > 0: stapel.append(i - b)
+            if y < h - 1: stapel.append(i + b)
+
+    def am_rand(i):
+        x, y = i % b, i // b
+        return (x == 0 or y == 0 or x == b - 1 or y == h - 1
+                or weg[i - 1] or weg[i + 1] or weg[i - b] or weg[i + b])
+
+    rand = [x for x in range(b)] + [(h - 1) * b + x for x in range(b)]
+    rand += [y * b for y in range(h)] + [y * b + b - 1 for y in range(h)]
+    flut(rand, None)                      # schon durchsichtiger Rand
+    gruende = []
+    for _ in range(2):
+        ring = [i for i in range(b * h) if not weg[i] and am_rand(i)]
+        if not ring:
+            break
+        farben = [px[i % b, i // b] for i in ring]
+        grund = tuple(sorted(f[k] for f in farben)[len(farben) // 2] for k in range(3))
+        passend = sum(1 for f in farben if abstand(f, grund) <= TOL) / len(farben)
+        hell, dunkel = min(grund) >= 200, max(grund) <= 45
+        # Weiß nur als äußerster Hintergrund; Schwarz darf innerhalb eines weißen Rahmens folgen
+        # (nie Weiß nach Schwarz: das wäre meist die weiße Umrandung des Wappens selbst)
+        if passend < 0.7 or not (hell or dunkel) or (gruende and (hell or max(gruende[-1]) <= 45)):
+            break
+        vorher = bytes(weg)
+        flut(ring, grund)
+        if sum(weg) > 0.8 * b * h:        # Wappen selbst wäre weg
+            weg[:] = vorher
+            break
+        gruende.append(grund)
     for y in range(h):
         for x in range(b):
             i = y * b + x
             if weg[i]:
                 px[x, y] = (*px[x, y][:3], 0)
-            else:
-                # Kante weich auslaufen lassen: helle Randpixel neben entferntem Hintergrund teilweise durchsichtig
-                nachbar = any(0 <= nx < b and 0 <= ny < h and weg[ny * b + nx]
-                              for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
-                if nachbar:
-                    d = abstand(px[x, y])
-                    if d < 90:
-                        r, g, bl, a = px[x, y]
-                        px[x, y] = (r, g, bl, min(a, int(255 * d / 90)))
+            elif gruende and 0 < x < b - 1 and 0 < y < h - 1 and (weg[i - 1] or weg[i + 1] or weg[i - b] or weg[i + b]):
+                # Kante weich auslaufen lassen
+                d = min(abstand(px[x, y], g) for g in gruende)
+                if d < 90:
+                    r, g_, bl, a = px[x, y]
+                    px[x, y] = (r, g_, bl, min(a, int(255 * d / 90)))
     bild.save(ziel, optimize=True)
 
 
