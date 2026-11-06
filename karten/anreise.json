@@ -1,0 +1,13 @@
+{
+  "datei": "karten/Karte-Anreise-Sportplatz-Steffenhorst.jpg",
+  "breite": 1920,
+  "hoehe": 900,
+  "zoom": 17,
+  "mitte": [51.5021, 7.2780],
+  "schrift": 30,
+  "markierungen": [
+    {"text": "Sportplatz TuS Harpen · Steffenhorst 1a", "lat": 51.50357, "lon": 7.27830},
+    {"art": "haltestelle", "text": "Bushaltestelle Wodanstraße", "lat": 51.50352, "lon": 7.27359},
+    {"art": "haltestelle", "text": "Bushaltestelle Freyaweg", "lat": 51.50024, "lon": 7.28223, "unten": true}
+  ]
+}
