@@ -43,7 +43,7 @@ jobs:
 
       - name: Pakete installieren
         run: |
-          pip install -q requests beautifulsoup4 fonttools reportlab
+          pip install -q requests beautifulsoup4 fonttools reportlab pillow
           sudo apt-get update -qq
           sudo apt-get install -y -qq lftp
 

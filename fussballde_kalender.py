@@ -551,13 +551,84 @@ def write_json(matches: list[Match], path: Path) -> None:
             "e": m.score,
             "oe": m.no_result,
             "z": m.score_extra,
-            "hw": f"{m.home_logo}.png" if m.home_logo else "",
-            "aw": f"{m.away_logo}.png" if m.away_logo else "",
+            "hw": f"{m.home_logo}{WAPPEN_ENDUNG}" if m.home_logo else "",
+            "aw": f"{m.away_logo}{WAPPEN_ENDUNG}" if m.away_logo else "",
         })
     daten = {"stand": datetime.now(BERLIN).isoformat(timespec="seconds"), "spiele": spiele}
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(daten, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     os.replace(tmp, path)
+
+
+# Freigestellte Wappen (heller Hintergrund entfernt) tragen eine eigene Endung, damit sie
+# neben den unveränderten Originalen liegen und beim Hochladen als neue Dateien gelten.
+WAPPEN_ENDUNG = ".f.png"
+
+
+def freistellen(quelle: Path, ziel: Path) -> None:
+    """Hellen, einfarbigen Hintergrund eines Wappens durchsichtig machen.
+
+    Von den Bildrändern aus werden alle zusammenhängenden Pixel entfernt, die der
+    (hellen) Eckfarbe ähneln; das Innere des Wappens bleibt unberührt, auch wenn es weiß ist.
+    Klappt das nicht (kein Pillow, Bild ohne hellen Rand), wird das Original kopiert.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        ziel.write_bytes(quelle.read_bytes())
+        return
+    try:
+        bild = Image.open(quelle).convert("RGBA")
+    except Exception:
+        ziel.write_bytes(quelle.read_bytes())
+        return
+    b, h = bild.size
+    px = bild.load()
+    ecken = [px[0, 0], px[b - 1, 0], px[0, h - 1], px[b - 1, h - 1]]
+    deckend = [e for e in ecken if e[3] > 200]
+    if not deckend:
+        bild.save(ziel, optimize=True)   # Hintergrund ist schon durchsichtig
+        return
+    grund = tuple(sorted(e[i] for e in deckend)[len(deckend) // 2] for i in range(3))
+    if min(grund) < 200:                 # farbiger Rand: lieber nichts verändern
+        ziel.write_bytes(quelle.read_bytes())
+        return
+
+    def abstand(p):
+        return max(abs(p[0] - grund[0]), abs(p[1] - grund[1]), abs(p[2] - grund[2]))
+
+    weg = bytearray(b * h)
+    stapel = [(x, y) for x in range(b) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, b - 1)]
+    while stapel:
+        x, y = stapel.pop()
+        i = y * b + x
+        if weg[i]:
+            continue
+        p = px[x, y]
+        if p[3] > 20 and abstand(p) > 40:
+            continue
+        weg[i] = 1
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if 0 <= nx < b and 0 <= ny < h and not weg[ny * b + nx]:
+                stapel.append((nx, ny))
+    if sum(weg) > 0.8 * b * h:           # fast alles wäre weg: Wappen selbst ist hell/quadratisch
+        ziel.write_bytes(quelle.read_bytes())
+        return
+    for y in range(h):
+        for x in range(b):
+            i = y * b + x
+            if weg[i]:
+                px[x, y] = (*px[x, y][:3], 0)
+            else:
+                # Kante weich auslaufen lassen: helle Randpixel neben entferntem Hintergrund teilweise durchsichtig
+                nachbar = any(0 <= nx < b and 0 <= ny < h and weg[ny * b + nx]
+                              for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
+                if nachbar:
+                    d = abstand(px[x, y])
+                    if d < 90:
+                        r, g, bl, a = px[x, y]
+                        px[x, y] = (r, g, bl, min(a, int(255 * d / 90)))
+    bild.save(ziel, optimize=True)
 
 
 def download_logos(matches: list[Match], folder: Path) -> None:
@@ -569,8 +640,6 @@ def download_logos(matches: list[Match], folder: Path) -> None:
     folder.mkdir(parents=True, exist_ok=True)
     ids = sorted({i for m in matches for i in (m.home_logo, m.away_logo) if i})
     missing = [i for i in ids if not (folder / f"{i}.png").exists()]
-    if not missing:
-        return
     session = requests.Session()
     session.headers.update({"User-Agent": "Vereinskalender-Skript (privater Kalender-Export)"})
     loaded = 0
@@ -587,6 +656,15 @@ def download_logos(matches: list[Match], folder: Path) -> None:
             continue
         (folder / f"{logo_id}.png").write_bytes(resp.content)
         loaded += 1
+    # Freigestellte Fassung zu jedem vorhandenen Original erzeugen (einmalig)
+    neu = 0
+    for logo_id in ids:
+        quelle, ziel = folder / f"{logo_id}.png", folder / f"{logo_id}{WAPPEN_ENDUNG}"
+        if quelle.exists() and not ziel.exists():
+            freistellen(quelle, ziel)
+            neu += 1
+    if neu:
+        print(f"Wappen: {neu} freigestellt")
     print(f"[{datetime.now():%H:%M:%S}] Wappen: {loaded} neu geladen, {len(ids)} insgesamt im Spielplan")
 
 
