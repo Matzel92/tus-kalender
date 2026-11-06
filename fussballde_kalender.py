@@ -551,8 +551,8 @@ def write_json(matches: list[Match], path: Path) -> None:
             "e": m.score,
             "oe": m.no_result,
             "z": m.score_extra,
-            "hw": f"{m.home_logo}{WAPPEN_ENDUNG}" if m.home_logo else "",
-            "aw": f"{m.away_logo}{WAPPEN_ENDUNG}" if m.away_logo else "",
+            "hw": wappen_name(m.home_logo),
+            "aw": wappen_name(m.away_logo),
         })
     daten = {"stand": datetime.now(BERLIN).isoformat(timespec="seconds"), "spiele": spiele}
     tmp = path.with_suffix(path.suffix + ".tmp")
@@ -564,6 +564,24 @@ def write_json(matches: list[Match], path: Path) -> None:
 # den unveränderten Originalen liegen und beim Hochladen als neue Dateien gelten.
 # Bei Änderungen am Verfahren die Endung hochzählen (f2, f3, …).
 WAPPEN_ENDUNG = ".f2.png"
+
+# Zentrale Ablage aller Vereinswappen: Ordner "wappen" im Repository (wird vom Workflow gepflegt
+# und nach spiele.tus-harpen.de/wappen/ hochgeladen; Homepage und Anzeige nutzen nur diese Dateien).
+# Von Hand verbesserte Wappen liegen in wappen/korrektur/<ID>.png und ersetzen die automatisch
+# freigestellte Fassung. Ihr Dateiname enthält eine Prüfsumme des Inhalts (z. B. <ID>.f912345.png),
+# damit Webspace und Browser eine geänderte Korrektur sofort als neue Datei behandeln.
+KORREKTUR_ORDNER = Path(__file__).resolve().parent / "wappen" / "korrektur"
+
+
+def wappen_name(logo_id: str) -> str:
+    """Dateiname des Wappens, den Homepage und Anzeige verwenden (leer, wenn keins)."""
+    if not logo_id:
+        return ""
+    korrektur = KORREKTUR_ORDNER / f"{logo_id}.png"
+    if korrektur.is_file():
+        import zlib
+        return f"{logo_id}.f9{zlib.crc32(korrektur.read_bytes()) % 100000:05d}.png"
+    return f"{logo_id}{WAPPEN_ENDUNG}"
 
 
 def freistellen(quelle: Path, ziel: Path) -> None:
@@ -680,6 +698,12 @@ def download_logos(matches: list[Match], folder: Path) -> None:
             neu += 1
     if neu:
         print(f"Wappen: {neu} freigestellt")
+    # Von Hand korrigierte Wappen unter ihrem eigenen Namen bereitstellen
+    for logo_id in ids:
+        name = wappen_name(logo_id)
+        if not name.endswith(WAPPEN_ENDUNG) and not (folder / name).exists():
+            (folder / name).write_bytes((KORREKTUR_ORDNER / f"{logo_id}.png").read_bytes())
+            print(f"Wappen: Korrektur {name} übernommen")
     print(f"[{datetime.now():%H:%M:%S}] Wappen: {loaded} neu geladen, {len(ids)} insgesamt im Spielplan")
 
 

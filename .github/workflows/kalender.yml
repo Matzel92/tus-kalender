@@ -25,11 +25,15 @@ on:
       - "spielplan_pdf.py"
       - "logo.png"
       - "schriften/**"
+      - "wappen/korrektur/**"
       - ".github/workflows/kalender.yml"
 
 concurrency:
   group: kalender
   cancel-in-progress: false
+
+permissions:
+  contents: write                  # neue Wappen ins Repository einchecken
 
 jobs:
   update:
@@ -37,6 +41,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0               # für das Einchecken neuer Wappen
 
       - uses: actions/setup-python@v6
         with:
@@ -48,7 +54,8 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq lftp
 
-      # Vereinswappen zwischen den Läufen aufbewahren, damit nur neue geladen werden
+      # Vereinswappen: zentrale Ablage ist der Ordner "wappen" im Repository (neue Wappen werden
+      # unten automatisch eingecheckt). Der Zwischenspeicher bleibt als Reserve bestehen.
       - name: Wappen-Zwischenspeicher holen
         uses: actions/cache@v4
         with:
@@ -61,6 +68,16 @@ jobs:
           python fussballde_kalender.py --out tus-harpen.ics --json spiele.json --wappen wappen
           ls -l tus-harpen.ics
           ls wappen | wc -l
+
+      - name: Neue Wappen im Repository ablegen
+        run: |
+          git add wappen
+          git diff --cached --quiet && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "Wappen: neue Vereinswappen von fussball.de"
+          # Läuft parallel eine Änderung ein, beim nächsten Lauf erneut versuchen
+          git pull -q --rebase origin main && git push -q origin HEAD:main || echo "::warning::Wappen nicht eingecheckt – nächster Lauf versucht es erneut"
 
       - name: PDF erzeugen (nächste 3 Monate)
         run: python spielplan_pdf.py tus-harpen.ics --out spielplan.pdf --months 3
@@ -132,6 +149,6 @@ jobs:
             put anzeige.html;
             put spiele.htaccess -o .htaccess;
             $LOGO
-            mirror -R --only-missing --no-perms --no-umask wappen wappen;
+            mirror -R --only-missing --no-perms --no-umask -x '^korrektur/' -x 'LIESMICH' wappen wappen;
             mirror -R --only-missing --no-perms --no-umask schriften schriften;
             bye"
