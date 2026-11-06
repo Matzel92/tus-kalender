@@ -23,7 +23,8 @@ def main():
     seite = ('<!doctype html>\n<html lang="de">\n<head>\n<meta charset="utf-8">\n'
              '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
              '<meta name="description" content="Trainingszeiten aller Mannschaften des TuS Harpen 08/11 – Wochenplan, Mannschaften und Platzbelegung">\n'
-             '<link rel="icon" href="' + a.logo + '">\n'
+             '<link rel="icon" type="image/png" href="favicon.png">\n'
+             '<link rel="apple-touch-icon" href="apple-touch-icon.png">\n'
              + kopf + "</style>\n</head>\n<body>\n" + rest.strip() + "\n</body>\n</html>\n")
     open(a.out, "w", encoding="utf-8").write(seite)
     print(f"{a.out} geschrieben ({len(seite) // 1024} KB)")

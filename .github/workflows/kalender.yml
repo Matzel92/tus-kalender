@@ -24,6 +24,8 @@ on:
       - "fussballde_kalender.py"
       - "spielplan_pdf.py"
       - "logo.png"
+      - "favicon.png"
+      - "apple-touch-icon.png"
       - "schriften/**"
       - "wappen/korrektur/**"
       - ".github/workflows/kalender.yml"
@@ -149,6 +151,8 @@ jobs:
             put anzeige.html;
             put spiele.htaccess -o .htaccess;
             $LOGO
+            put favicon.png;
+            put apple-touch-icon.png;
             mirror -R --only-missing --no-perms --no-umask -x '^korrektur/' -x 'LIESMICH' wappen wappen;
             mirror -R --only-missing --no-perms --no-umask schriften schriften;
             bye"
