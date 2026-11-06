@@ -60,6 +60,8 @@ MIN_INTERVAL = 60  # Sekunden; kürzer wird nicht zugelassen
 DATE_RE = re.compile(r"(\d{1,2})\.(\d{1,2})\.(\d{2,4})")
 TIME_RE = re.compile(r"\b(\d{1,2}):(\d{2})\b")
 GAME_ID_RE = re.compile(r"/-/spiel/([A-Za-z0-9]+)")
+LOGO_ID_RE = re.compile(r"getLogo/format/\d+/id/([A-Z0-9]+)")
+LOGO_URL = BASE + "/export.media/-/action/getLogo/format/2/id/{id}"  # 99 × 99 px, PNG
 CANCEL_WORDS = ("abgesetzt", "absetzung", "ausfall", "abgesagt", "annulliert")
 
 
@@ -78,6 +80,8 @@ class Match:
     score: str = ""       # Ergebnis, z. B. "2:1" (leer, solange keins eingetragen ist)
     no_result: bool = False  # "o.E." – Staffel ohne Ergebnisanzeige (z. B. Kinderfußball)
     score_extra: str = ""    # "n.V." oder "n.E." (nach Verlängerung / Elfmeterschießen)
+    home_logo: str = ""      # fussball.de-Kennung des Vereinswappens (Heim)
+    away_logo: str = ""      # fussball.de-Kennung des Vereinswappens (Gast)
 
     @property
     def cancelled(self) -> bool:
@@ -387,6 +391,12 @@ def parse_matchplan(html: str, deob: "Deobfuscator | None" = None) -> list[Match
             continue
 
         home, away = names[0], names[1]
+        logos = []
+        for cell in tr.select(".column-club"):
+            img = cell.select_one(".club-logo [data-responsive-image]")
+            lm = LOGO_ID_RE.search(img.get("data-responsive-image", "")) if img else None
+            logos.append(lm.group(1) if lm else "")
+        logos += ["", ""]
         link = tr.find("a", href=GAME_ID_RE)
         url = link["href"] if link else ""
         if url.startswith("/"):
@@ -430,6 +440,7 @@ def parse_matchplan(html: str, deob: "Deobfuscator | None" = None) -> list[Match
             uid=uid, day=day, kickoff=kickoff, home=home, away=away,
             label=cur_label, url=url, status_note=status_note, marker=marker,
             score=score, no_result=no_result, score_extra=score_extra,
+            home_logo=logos[0], away_logo=logos[1],
         )
         matches.append(last)
 
@@ -540,11 +551,43 @@ def write_json(matches: list[Match], path: Path) -> None:
             "e": m.score,
             "oe": m.no_result,
             "z": m.score_extra,
+            "hw": f"{m.home_logo}.png" if m.home_logo else "",
+            "aw": f"{m.away_logo}.png" if m.away_logo else "",
         })
     daten = {"stand": datetime.now(BERLIN).isoformat(timespec="seconds"), "spiele": spiele}
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(daten, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     os.replace(tmp, path)
+
+
+def download_logos(matches: list[Match], folder: Path) -> None:
+    """Vereinswappen einmalig herunterladen (vorhandene Dateien bleiben unangetastet).
+
+    Die Wappen liegen danach auf dem eigenen Webspace; Besucher der Anzeige und der
+    Homepage laden sie von dort und nicht von fussball.de.
+    """
+    folder.mkdir(parents=True, exist_ok=True)
+    ids = sorted({i for m in matches for i in (m.home_logo, m.away_logo) if i})
+    missing = [i for i in ids if not (folder / f"{i}.png").exists()]
+    if not missing:
+        return
+    session = requests.Session()
+    session.headers.update({"User-Agent": "Vereinskalender-Skript (privater Kalender-Export)"})
+    loaded = 0
+    for n, logo_id in enumerate(missing):
+        if n:
+            time.sleep(0.3)  # höflich bleiben
+        try:
+            resp = session.get(LOGO_URL.format(id=logo_id), timeout=20)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            print(f"Wappen {logo_id} nicht geladen: {e}", file=sys.stderr)
+            continue
+        if not resp.headers.get("Content-Type", "").startswith("image/") or len(resp.content) < 100:
+            continue
+        (folder / f"{logo_id}.png").write_bytes(resp.content)
+        loaded += 1
+    print(f"[{datetime.now():%H:%M:%S}] Wappen: {loaded} neu geladen, {len(ids)} insgesamt im Spielplan")
 
 
 def run_once(args) -> int:
@@ -572,6 +615,8 @@ def run_once(args) -> int:
 
     ics = build_ics(matches, args.name, args.duration, datetime.now(timezone.utc))
     changed = write_if_changed(Path(args.out), ics)
+    if args.wappen:
+        download_logos(matches, Path(args.wappen))
     if args.json:
         write_json(matches, Path(args.json))
     print(f"[{datetime.now():%H:%M:%S}] {len(matches)} Spiele, "
@@ -593,6 +638,7 @@ def main() -> int:
                    help="Sekunden zwischen zwei Abrufen; 0 = nur einmal ausführen (Minimum 60)")
     p.add_argument("--debug-html", help="Rohes HTML zusätzlich in diese Datei speichern")
     p.add_argument("--json", help="Spieldaten zusätzlich für die Anzeigeseite in diese Datei schreiben (z. B. spiele.json)")
+    p.add_argument("--wappen", help="Vereinswappen in diesen Ordner herunterladen (z. B. wappen); fehlende werden ergänzt")
     args = p.parse_args()
 
     if not args.club_id:

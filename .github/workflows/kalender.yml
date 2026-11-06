@@ -47,10 +47,19 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq lftp
 
+      # Vereinswappen zwischen den Läufen aufbewahren, damit nur neue geladen werden
+      - name: Wappen-Zwischenspeicher holen
+        uses: actions/cache@v4
+        with:
+          path: wappen
+          key: wappen-${{ github.run_id }}
+          restore-keys: wappen-
+
       - name: Kalender erzeugen
         run: |
-          python fussballde_kalender.py --out tus-harpen.ics --json spiele.json
+          python fussballde_kalender.py --out tus-harpen.ics --json spiele.json --wappen wappen
           ls -l tus-harpen.ics
+          ls wappen | wc -l
 
       - name: PDF erzeugen (nächste 3 Monate)
         run: python spielplan_pdf.py tus-harpen.ics --out spielplan.pdf --months 3
@@ -104,6 +113,9 @@ jobs:
           </Files>
           </IfModule>
           HT
+          # Wappen ändern sich praktisch nie: eine Woche im Browser zwischenspeichern
+          mkdir -p wappen
+          printf '<IfModule mod_headers.c>\nHeader set Cache-Control "public, max-age=604800"\n</IfModule>\n' > wappen/.htaccess
           sed -i 's/^ *//' spiele.htaccess
           LOGO=""; [ -f logo.png ] && LOGO="put logo.png;"
           lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "
@@ -117,4 +129,5 @@ jobs:
             put anzeige.html;
             put spiele.htaccess -o .htaccess;
             $LOGO
+            mirror -R --only-missing --no-perms --no-umask wappen wappen;
             bye"
