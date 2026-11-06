@@ -4,12 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TuS Harpen 08/11 – Spiele</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
 <style>
-/* Layout: Anzeigetafel im Querformat – weiße Kopfleiste mit Vereinswappen, darunter vereinsblaue Tafel:
+/* Schriften wie auf neu.tus-harpen.de – lokal, keine Verbindung zu Google */
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 400; font-display: swap; src: url(schriften/barlow-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 500; font-display: swap; src: url(schriften/barlow-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 600; font-display: swap; src: url(schriften/barlow-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 700; font-display: swap; src: url(schriften/barlow-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 500; font-display: swap; src: url(schriften/barlow-condensed-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 600; font-display: swap; src: url(schriften/barlow-condensed-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: italic; font-weight: 600; font-display: swap; src: url(schriften/barlow-condensed-latin-600-italic.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url(schriften/barlow-condensed-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: italic; font-weight: 700; font-display: swap; src: url(schriften/barlow-condensed-latin-700-italic.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: italic; font-weight: 800; font-display: swap; src: url(schriften/barlow-condensed-latin-800-italic.woff2) format("woff2"); }
+/* Layout: Anzeigetafel im Querformat – Kopfleiste mit Vereinswappen, darunter vereinsblaue Tafel:
    links "Heute" groß, rechts die nächsten Spieltage, unten Statuszeile.
-   Bewusst ein festes Erscheinungsbild in den Vereinsfarben Blau und Weiß (Fernseher im Vereinsheim). */
+   Bewusst ein festes Erscheinungsbild in den Vereinsfarben Blau und Weiß (Fernseher im Vereinsheim).
+   Aussehen seit 06.11.2026 wie die neue Homepage – siehe Abschnitt „Design wie die neue Homepage“ am Ende. */
 :root {
   --blue: #0B3D91;        /* Vereinsblau */
   --blue-deep: #082D6E;   /* Tafelgrund */
@@ -193,11 +203,123 @@ body {
   .game .state { grid-column: 2; justify-self: start; text-align: left; }
 }
 @media (prefers-reduced-motion: reduce) { .state.live::before { animation: none; } .viewport { transition: none; } }
+
+/* =========================================================
+   Design wie die neue Homepage neu.tus-harpen.de (Theme „TuS Harpen“)
+   Kopf einfarbig #0B4199, Überschriften Barlow Condensed 800 kursiv in Großbuchstaben,
+   dunkle Tafel mit Streifen und Wappen-Wasserzeichen, Spalten als Karten mit runden Ecken.
+   ========================================================= */
+:root {
+  --kopfblau: #0B4199;    /* Kopfbereich der Homepage */
+  --nacht: #061F4A;
+  --fuss: #051A3E;
+  --hell-text: #DCE6F5;
+  --gruen: #4ADE80;       /* Anstoßzeiten „Heute“ wie auf der Homepage */
+  --radius: 14px;
+}
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+.board {
+  position: relative; isolation: isolate; overflow: hidden;
+  background:
+    radial-gradient(90% 140% at 100% 0%, rgba(11, 61, 145, .35) 0%, transparent 55%),
+    linear-gradient(135deg, var(--blue-deep) 0%, var(--nacht) 100%);
+}
+.board::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: .6; pointer-events: none;
+  background: repeating-linear-gradient(115deg, rgba(255, 255, 255, .03) 0 2px, transparent 2px 48px);
+}
+.board::after {
+  content: ""; position: absolute; right: -4vw; bottom: -6vh; width: 34vw; aspect-ratio: 23 / 24; z-index: -1; pointer-events: none;
+  background: url(logo.png) center / contain no-repeat; opacity: .05; transform: rotate(-12deg);
+}
+
+/* Kopfbereich: Slogan-Zeile und Kopfleiste einfarbig wie auf der Homepage */
+.kopfbereich { background: var(--kopfblau); color: #fff; }
+.oben {
+  display: flex; justify-content: space-between; gap: 1em; align-items: center;
+  font-family: var(--display); font-weight: 600; font-style: italic; text-transform: uppercase; letter-spacing: .22em; font-size: .72em;
+  color: var(--hell-text); padding-block: .45em; border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+.oben span:last-child { letter-spacing: .14em; }
+.top { background: var(--kopfblau); color: #fff; border-bottom: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 10px 30px rgba(0, 0, 0, .25); }
+.logo img { filter: drop-shadow(0 0 14px rgba(255, 255, 255, .18)); }
+.logo button:focus-visible { outline-color: #fff; }
+.club h1 { font-weight: 800; font-style: italic; text-transform: uppercase; letter-spacing: .01em; color: #fff; }
+.club p { color: var(--muted); font-family: var(--display); font-weight: 600; letter-spacing: .16em; font-size: .85em !important; margin-top: .25em; }
+.clock .time { color: #fff; font-weight: 800; font-style: italic; }
+.clock .date { color: var(--muted); font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .1em; font-size: 1.05em; }
+
+/* Spalten als Karten */
+.main { padding-block: clamp(12px, 1.1vw, 24px); }
+.col {
+  background: var(--blue-row); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: clamp(10px, .9vw, 20px) clamp(12px, 1vw, 22px); box-shadow: 0 18px 40px rgba(0, 0, 0, .18);
+}
+.col h2 {
+  font-weight: 800; font-style: italic; letter-spacing: .02em; font-size: clamp(20px, 1.7vw, 36px);
+  border-bottom: 0; padding-bottom: .1em; align-items: center;
+}
+.col h2 .when { background: #fff; color: var(--kopfblau); padding: .02em .4em; border-radius: 4px; box-shadow: 0 0 20px rgba(11, 61, 145, .55); }
+.col h2 .count { font-family: var(--display); font-weight: 600; font-size: .5em; letter-spacing: .14em; }
+.pages i { background: rgba(255, 255, 255, .25); }
+.list h3, .zwischen {
+  font-weight: 700; font-style: italic; color: #AAB4C3; letter-spacing: .14em; font-size: .92em;
+  border-bottom: 1px solid rgba(255, 255, 255, .1); padding-bottom: .2em; margin: 1em 0 .25em;
+}
+.zwischen { color: #fff; font-weight: 800; font-size: 1.15em; letter-spacing: .04em; border-bottom: 0; margin-top: 1.1em; }
+
+/* Spielzeilen wie auf der Homepage: runde Ecken, feine Linien, Mannschaft als Etikett */
+.game { border-radius: 8px; border-bottom: 1px solid rgba(255, 255, 255, .08); padding: .42em .6em; margin-block: 1px; }
+.game .t { font-weight: 800; font-style: italic; }
+#today .game:not(.fill) .t { color: var(--gruen); }
+.game .team { display: inline-block; background: rgba(255, 255, 255, .16); color: #E6EAF0; border-radius: 4px; padding: 0 .4em; margin-right: .5em; font-family: var(--display); font-weight: 700; letter-spacing: .08em; }
+.game .match { font-weight: 600; }
+.game .match .own { font-weight: 800; font-style: italic; letter-spacing: .01em; }
+.game .match .vs { color: var(--muted); }
+.tag { border-radius: 4px; font-family: var(--display); font-weight: 700; }
+.tag.h { background: var(--kopfblau); }
+.game.home { background: #fff; border-bottom-color: transparent; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
+#today .game.home .t, .game.home .t { color: var(--kopfblau); }
+.game.home .team { background: var(--kopfblau); color: #fff; }
+.game.home .match .own, .game.home .match .opp { color: #0E1A2E; }
+.game.home .match .own { color: var(--kopfblau); }
+.game.home .meta, .game.home .where { color: #5A6B86; }
+.game.home .match .vs { color: #9FB2CF; }
+.game.home .state.soon { background: var(--kopfblau); }
+.state { font-weight: 700; font-style: italic; }
+.state.soon { border-radius: 4px; }
+.chip { border-radius: 4px; font-weight: 800; font-style: italic; }
+.chip.win { background: var(--gruen); }
+.chip.open, .chip.cancelled { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25); }
+.empty { border-bottom: 1px solid rgba(255, 255, 255, .08); }
+.empty strong { font-weight: 800; font-style: italic; }
+
+/* Vereinswappen vor den Vereinsnamen (Dateien aus spiele.json: hw / aw) */
+.wap { display: inline-block; width: 1.05em; height: 1.05em; object-fit: contain; vertical-align: -.16em; margin-right: .28em; }
+.wap.leer { border-radius: 50%; background: rgba(255, 255, 255, .18); width: .8em; height: .8em; vertical-align: -.02em; margin-inline: .12em .4em; }
+.game.home .wap.leer { background: #E2E8F2; }
+.nw { white-space: nowrap; }
+
+/* Fußzeile wie der Fußbereich der Homepage */
+.foot { background: var(--fuss); color: #AFC0DA; border-top: 1px solid rgba(255, 255, 255, .08); }
+.ctl button {
+  font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  border: 2px solid rgba(255, 255, 255, .55); border-radius: 8px; padding: .25em .9em;
+}
+.ctl button:hover, .ctl button[aria-pressed="true"] { background: #fff; color: var(--kopfblau); border-color: #fff; }
+
+@media (max-width: 900px) {
+  .oben { display: none; }
+  .col { padding: 12px; }
+  .sec { font-weight: 800; font-style: italic; border-bottom: 0; }
+}
 </style>
 </head>
 <body>
 <div class="board">
-  <header class="top pad">
+  <header class="kopfbereich">
+  <div class="oben pad"><span>Wir sind Harpen — der Verein aus’m Bockholt</span><span>tus-harpen.de</span></div>
+  <div class="top pad">
     <div class="logo" id="logoBox">
       <!-- Platzhalter, bis das echte Vereinslogo (logo.png) eingebunden ist -->
       <svg id="logoPlaceholder" viewBox="0 0 80 96" aria-hidden="true">
@@ -216,6 +338,7 @@ body {
       <div class="time" id="time">--:--</div>
       <div class="date" id="date"></div>
     </div>
+  </div>
   </header>
 
 
@@ -266,6 +389,18 @@ function wettbewerb(c) {
   if (/freundschaft/i.test(c)) return "Freundschaftsspiel";
   return (c || "").replace(/Verbandspokal/g, "Westfalenpokal");
 }
+// Vereinswappen: freigestellte Dateien im Ordner wappen/ neben dieser Seite (Name aus spiele.json, Felder hw/aw).
+// Lokal geöffnet (ohne Ordner) werden sie von spiele.tus-harpen.de geholt; fehlt ein Wappen, steht ein grauer Punkt da.
+const WAPPEN_ORDNER = location.protocol === "file:" ? "https://spiele.tus-harpen.de/wappen/" : "wappen/";
+function wappen(datei) {
+  if (!datei || !/^[A-Za-z0-9]+(\.f\d*)?\.png$/.test(datei)) return '<i class="wap leer"></i>';
+  return '<img class="wap" src="' + WAPPEN_ORDNER + datei + '" alt="" loading="lazy" onerror="this.outerHTML=\'<i class=&quot;wap leer&quot;></i>\'">';
+}
+// Wappen und erstes Wort zusammenhalten, damit das Wappen beim Umbruch nicht allein am Zeilenende steht
+function vereinsname(name, datei) {
+  const n = String(name || ""), i = n.indexOf(" ");
+  return '<span class="nw">' + wappen(datei) + esc(i < 0 ? n : n.slice(0, i)) + '</span>' + (i < 0 ? "" : esc(n.slice(i)));
+}
 function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
 
 function zustand(s, now) {
@@ -289,9 +424,9 @@ function zeile(s, now, mitStatus, kurz) {
   const z = zustand(s, now);
   const heim = eigen(s.h);
   const paarung =
-    '<span class="' + (eigen(s.h) ? "own" : "opp") + '">' + esc(s.h) + '</span>' +
+    '<span class="' + (eigen(s.h) ? "own" : "opp") + '">' + vereinsname(s.h, s.hw) + '</span>' +
     '<span class="vs">–</span>' +
-    '<span class="' + (eigen(s.a) ? "own" : "opp") + '">' + esc(s.a) + '</span>';
+    '<span class="' + (eigen(s.a) ? "own" : "opp") + '">' + vereinsname(s.a, s.aw) + '</span>';
   const kompakt = z.done || s.x;   // beendete und abgesetzte Spiele klein darstellen
   const cls = ["game", heim && !kompakt ? "home" : "", mitStatus && kompakt ? "done" : "", s.x ? "cancelled" : "",
                kurz ? "kurz" : "", andererPlatz(s) && !kompakt ? "anders" : ""].join(" ");
@@ -351,9 +486,9 @@ function ergebnisZeile(s) {
     art = wir === null ? "draw" : wir > 0 ? "win" : wir < 0 ? "loss" : "draw";
   }
   const paarung =
-    '<span class="' + (eigen(s.h) ? "own" : "opp") + '">' + esc(s.h) + '</span>' +
+    '<span class="' + (eigen(s.h) ? "own" : "opp") + '">' + vereinsname(s.h, s.hw) + '</span>' +
     '<span class="vs">–</span>' +
-    '<span class="' + (eigen(s.a) ? "own" : "opp") + '">' + esc(s.a) + '</span>';
+    '<span class="' + (eigen(s.a) ? "own" : "opp") + '">' + vereinsname(s.a, s.aw) + '</span>';
   return '<div class="game res ' + art + '">' +
     '<div class="score">' + (art === "kids" ? BALLONS : '<span class="chip ' + art + '">' + esc(text) + (s.e && s.z ? '<small>' + esc(s.z) + '</small>' : "") + '</span>') + '</div>' +
     '<div class="who">' +

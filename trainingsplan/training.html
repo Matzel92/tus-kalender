@@ -1,9 +1,19 @@
 <title>TuS Harpen Trainingsplan</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
 <style>
-/* Layout: wie die Spiele-Anzeige – weiße Kopfleiste mit Wappen, vereinsblaue Tafel.
+/* Schriften wie auf neu.tus-harpen.de – lokal, keine Verbindung zu Google */
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 400; font-display: swap; src: url(schriften/barlow-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 500; font-display: swap; src: url(schriften/barlow-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 600; font-display: swap; src: url(schriften/barlow-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 700; font-display: swap; src: url(schriften/barlow-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 500; font-display: swap; src: url(schriften/barlow-condensed-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 600; font-display: swap; src: url(schriften/barlow-condensed-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: italic; font-weight: 600; font-display: swap; src: url(schriften/barlow-condensed-latin-600-italic.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url(schriften/barlow-condensed-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: italic; font-weight: 700; font-display: swap; src: url(schriften/barlow-condensed-latin-700-italic.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: italic; font-weight: 800; font-display: swap; src: url(schriften/barlow-condensed-latin-800-italic.woff2) format("woff2"); }
+/* Layout: wie die Spiele-Anzeige – Kopfleiste mit Wappen, vereinsblaue Tafel.
+   Aussehen seit 06.11.2026 wie die neue Homepage – siehe Abschnitt „Design wie die neue Homepage“ am Ende.
    Links die Platzgrafik mit der Belegung zur gewählten Zeit, rechts der Tagesablauf; umschaltbar auf Wochenübersicht.
    Bewusst ein festes Erscheinungsbild in Blau/Weiß (Fernseher im Vereinsheim, Homepage, Handy). */
 :root {
@@ -128,7 +138,7 @@ body {
 
 /* Wochenplan: je Tag ein Raster mit den Platzbereichen als Bahnen und 15-Minuten-Zeilen */
 .view { padding-block: clamp(10px, .9vw, 18px); min-width: 0; }
-.wk { --slot: clamp(9px, calc((100vh - 21.5em) / 48), 1.1em); --gx: clamp(8px, .8vw, 16px); display: grid; grid-template-columns: 2.6em repeat(3, minmax(0, 1fr)) 2.6em; gap: clamp(14px, 1.4vw, 26px) var(--gx); }
+.wk { --slot: clamp(9px, calc((100vh - 26em) / 48), 1.1em); --gx: clamp(8px, .8vw, 16px); display: grid; grid-template-columns: 2.6em repeat(3, minmax(0, 1fr)) 2.6em; gap: clamp(14px, 1.4vw, 26px) var(--gx); }
 .wk .rest { display: grid; grid-template-columns: 2.6em minmax(0, 1fr); column-gap: var(--gx); min-width: 0; }
 .day { min-width: 0; }
 .day h3 { margin: 0; line-height: 1.1; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid var(--white); }
@@ -327,10 +337,131 @@ body {
   #pitch { max-height: none; }
 }
 @media (prefers-reduced-motion: reduce) { .state.live::before { animation: none; } .unit { transition: none; } }
+
+/* =========================================================
+   Design wie die neue Homepage neu.tus-harpen.de (Theme „TuS Harpen“)
+   Kopf einfarbig #0B4199, Überschriften Barlow Condensed 800 kursiv in Großbuchstaben,
+   Reiterleiste als Titelband, Inhalt auf Karten mit runden Ecken (hell: hellgrauer Grund wie die Unterseiten).
+   ========================================================= */
+:root {
+  --kopfblau: #0B4199;    /* Kopfbereich der Homepage */
+  --nacht: #061F4A;
+  --fuss: #051A3E;
+  --hell-text: #DCE6F5;
+  --radius: 14px;
+  --schatten: 0 1px 2px rgba(6, 31, 74, .06), 0 8px 24px rgba(6, 31, 74, .07);
+}
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+.board {
+  position: relative; isolation: isolate; overflow: hidden;
+  background:
+    radial-gradient(90% 140% at 100% 0%, rgba(11, 61, 145, .35) 0%, transparent 55%),
+    linear-gradient(135deg, var(--blue-deep) 0%, var(--nacht) 100%);
+}
+
+/* Kopfbereich: Slogan-Zeile und Kopfleiste einfarbig wie auf der Homepage */
+.kopfbereich { background: var(--kopfblau); color: #fff; }
+.oben {
+  display: flex; justify-content: space-between; gap: 1em; align-items: center;
+  font-family: var(--display); font-weight: 600; font-style: italic; text-transform: uppercase; letter-spacing: .22em; font-size: .72em;
+  color: var(--hell-text); padding-block: .4em; border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+.oben a { color: var(--hell-text); text-decoration: none; letter-spacing: .14em; }
+.oben a:hover { color: #fff; }
+.top { background: var(--kopfblau); color: #fff; border-bottom: 0; padding-block: clamp(6px, .5vw, 10px); }
+.logo img { filter: drop-shadow(0 0 14px rgba(255, 255, 255, .18)); }
+.club h1 { font-weight: 800; font-style: italic; text-transform: uppercase; color: #fff; }
+.club .sub { color: var(--muted); font-weight: 600; letter-spacing: .14em; }
+.club p.gueltig { color: var(--hell-text); }
+.clock .time { color: #fff; font-weight: 800; font-style: italic; }
+.clock .date { color: var(--muted); font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .1em; }
+
+/* Reiterleiste als Titelband (Streifen wie auf den Unterseiten), Knöpfe wie auf der Homepage */
+.tabs {
+  position: relative; isolation: isolate;
+  background:
+    radial-gradient(90% 140% at 100% 0%, rgba(11, 61, 145, .35) 0%, transparent 55%),
+    linear-gradient(135deg, var(--blue-deep) 0%, var(--nacht) 100%);
+  border-top: 1px solid rgba(255, 255, 255, .12); padding-block: .7em;
+}
+.tabs::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: .6; pointer-events: none;
+  background: repeating-linear-gradient(115deg, rgba(255, 255, 255, .03) 0 2px, transparent 2px 48px);
+}
+.tablist button {
+  font-weight: 700; font-style: italic; letter-spacing: .06em; border: 2px solid rgba(255, 255, 255, .55); border-radius: 8px; padding: .3em 1em;
+  transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+.tablist button:hover { transform: translateY(-1px); border-color: #fff; }
+.tablist button[aria-selected="true"] { background: #fff; color: var(--kopfblau); border-color: #fff; box-shadow: 0 4px 12px rgba(0, 0, 0, .2); }
+.ctl label { color: var(--muted); font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .1em; font-size: .9em; }
+.ctl select { background: rgba(255, 255, 255, .08); border: 2px solid rgba(255, 255, 255, .35); border-radius: 8px; color: #fff; font-weight: 600; }
+.ctl select option { background: var(--blue-deep); color: #fff; }
+.ctl button, .pick button {
+  font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  border: 2px solid rgba(255, 255, 255, .55); border-radius: 8px; padding: .25em .9em;
+}
+.ctl button:hover, .ctl button[aria-pressed="true"] { background: #fff; color: var(--kopfblau); border-color: #fff; }
+
+/* Inhalt als Karten */
+.view { padding-block: clamp(14px, 1.3vw, 26px); }
+.wk { position: relative; }
+#viewWoche, #viewTeams, #viewHalle { --kartenpad: clamp(10px, 1vw, 22px); }
+#viewWoche .wk, #viewTeams .ttwrap, #viewHalle .hal, #viewPlatz .col {
+  background: var(--blue-row); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: var(--kartenpad, clamp(10px, 1vw, 22px)); box-shadow: 0 18px 40px rgba(0, 0, 0, .18);
+}
+.day h3, .axcol h3, .platzfig h3, .legende h3, .hal h3, .tt th, .col h2 { font-weight: 800; font-style: italic; letter-spacing: .03em; }
+.day h3, .platzfig h3, .legende h3, .hal h3, .tt th { border-bottom-width: 3px; }
+.day.today h3 span, .tt th.today span, .col h2 .when, .hu.heute .tg span { border-radius: 4px; padding: 0 .3em; }
+.col h2 { border-bottom: 0; align-items: center; font-size: clamp(20px, 1.6vw, 34px); }
+.col h2 .when { box-shadow: 0 0 20px rgba(11, 61, 145, .55); }
+.unit { border-radius: 8px; padding-left: .2em; }
+.unit .t, .hu .tg, .hu .tm, .tt .ut .tm { font-weight: 800; font-style: italic; }
+.blk { border-radius: 6px; }
+.mine { border-radius: 10px; }
+.legende button { border-radius: 4px; }
+.wkhint { margin-top: .9em; }
+
+/* Fußzeile wie der Fußbereich der Homepage */
+.foot { background: var(--fuss); color: #AFC0DA; border-top: 1px solid rgba(255, 255, 255, .08); }
+
+/* Helle Darstellung (Standard tagsüber): hellgrauer Grund, weiße Karten mit Schatten – wie die Unterseiten der Homepage */
+.board.hell { background: #F2F5FA; }
+.hell .view, .hell #viewPlatz { background: #F2F5FA; color: #0E1A2E; }
+.hell #viewWoche .wk, .hell #viewTeams .ttwrap, .hell #viewHalle .hal, .hell #viewPlatz .col { background: #fff; border-color: #E2E8F2; box-shadow: var(--schatten); }
+.hell .day h3, .hell .platzfig h3, .hell .legende h3, .hell .tt th, .hell .hal h3, .hell #viewPlatz .col h2 { color: #0E1A2E; border-bottom-color: var(--kopfblau); }
+.hell .day.today h3 span, .hell .tt th.today span, .hell #viewPlatz .col h2 .when, .hell .hu.heute .tg span { background: var(--kopfblau); color: #fff; }
+.hell #viewPlatz .col h2 .when { box-shadow: 0 6px 18px rgba(11, 65, 153, .3); }
+.hell .lh, .hell .dg .ax, .hell .axg span, .hell .wkhint, .hell .tt td.n small, .hell .tt .ut .fl,
+.hell .hal h3 small, .hell .leer, .hell #viewPlatz .col h2 .count, .hell .slider .lab, .hell .unit .meta, .hell .empty span, .hell .state, .hell .tt td[data-tag]::before { color: #5A6B86; }
+.hell .dg .lane { border-left-color: #E2E8F2; background: repeating-linear-gradient(to bottom, #E2E8F2 0 1px, #fff 1px calc(var(--slot) * 4)); }
+.hell .dg .lane.lb { background-color: #FBEDED; }
+.hell .tt td, .hell .tt tr, .hell .hu, .hell .unit, .hell .empty { border-bottom-color: #E2E8F2; }
+.hell .tt td.n b, .hell .slider output { color: var(--kopfblau); }
+.hell .tt .ut .tm, .hell .hu .tg, .hell .hu .tm, .hell .unit .t, .hell .unit .team { color: #0E1A2E; }
+.hell .tt tr.sel td, .hell .unit.at, .hell .mine { background: #EAF0FA; }
+.hell .tt tr:hover td { background: #F2F5FA; }
+.hell .unit.at { color: var(--kopfblau); }
+.hell .pick button { color: var(--kopfblau); border-color: #C9D6EA; background: #fff; }
+.hell .pick button:hover { border-color: var(--kopfblau); }
+.hell .pick button[aria-pressed="true"] { background: var(--kopfblau); color: #fff; border-color: var(--kopfblau); }
+.hell .state.soon, .hell .unit.at .state.soon { background: var(--kopfblau); }
+.hell .slider input { accent-color: var(--kopfblau); }
+
+@media (max-width: 800px) {
+  .oben { display: none; }
+  #viewWoche .wk { padding: 10px; }
+}
+@media (max-width: 600px) {
+  .tablist button { border-width: 1px; border-radius: 6px; }
+}
 </style>
 
 <div class="board">
-  <header class="top pad">
+  <header class="kopfbereich">
+  <div class="oben pad"><span>Wir sind Harpen — der Verein aus’m Bockholt</span><span>tus-harpen.de</span></div>
+  <div class="top pad">
     <div class="logo"><img id="logoImg" src="__LOGO__" alt="Vereinslogo TuS Harpen 08/11"></div>
     <div class="club">
       <div class="titelzeile"><h1>TuS Harpen 08/11</h1><span class="sub" id="sub">Trainingsplan</span></div>
@@ -340,6 +471,7 @@ body {
       <div class="time" id="time">--:--</div>
       <div class="date" id="date"></div>
     </div>
+  </div>
   </header>
 
   <nav class="tabs pad">

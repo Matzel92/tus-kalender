@@ -15,6 +15,7 @@ on:
     paths:
       - "trainingsplan/**"
       - "logo.png"
+      - "schriften/**"
       - ".github/workflows/trainingsplan.yml"
 
 concurrency:
@@ -45,6 +46,9 @@ jobs:
           python trainingszeiten_json.py Trainingszeiten.xlsx --out ../site/trainingsplan.json
           python seite_bauen.py --daten ../site/trainingsplan.json --out ../site/index.html
           cp ../logo.png ../site/logo.png
+          # Schriften (Barlow, wie auf der Homepage) – lokal statt von Google, ein Jahr zwischenspeichern
+          cp -r ../schriften ../site/schriften
+          printf '<IfModule mod_headers.c>\nHeader set Cache-Control "public, max-age=31536000"\n</IfModule>\n' > ../site/schriften/.htaccess
           # Seite und Daten nicht lange zwischenspeichern, damit Änderungen sofort sichtbar sind
           printf '<IfModule mod_headers.c>\n<FilesMatch "\\.(html|json)$">\nHeader set Cache-Control "no-cache"\n</FilesMatch>\n</IfModule>\n' > ../site/.htaccess
           ls -l ../site
@@ -78,4 +82,5 @@ jobs:
             put index.html;
             put logo.png;
             put .htaccess;
+            mirror -R --only-missing --no-perms --no-umask schriften schriften;
             bye"

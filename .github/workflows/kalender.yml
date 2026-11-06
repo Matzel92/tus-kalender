@@ -24,6 +24,7 @@ on:
       - "fussballde_kalender.py"
       - "spielplan_pdf.py"
       - "logo.png"
+      - "schriften/**"
       - ".github/workflows/kalender.yml"
 
 concurrency:
@@ -117,6 +118,8 @@ jobs:
           mkdir -p wappen
           printf '<IfModule mod_headers.c>\nHeader set Cache-Control "public, max-age=604800"\n</IfModule>\n' > wappen/.htaccess
           sed -i 's/^ *//' spiele.htaccess
+          # Schriften (Barlow, wie auf der Homepage) ändern sich nie: ein Jahr zwischenspeichern
+          printf '<IfModule mod_headers.c>\nHeader set Cache-Control "public, max-age=31536000"\n</IfModule>\n' > schriften/.htaccess
           LOGO=""; [ -f logo.png ] && LOGO="put logo.png;"
           lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "
             set sftp:auto-confirm yes;
@@ -130,4 +133,5 @@ jobs:
             put spiele.htaccess -o .htaccess;
             $LOGO
             mirror -R --only-missing --no-perms --no-umask wappen wappen;
+            mirror -R --only-missing --no-perms --no-umask schriften schriften;
             bye"
