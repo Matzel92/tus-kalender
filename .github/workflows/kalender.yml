@@ -28,6 +28,7 @@ on:
       - "apple-touch-icon.png"
       - "schriften/**"
       - "wappen/korrektur/**"
+      - "tabellen.py"
       - ".github/workflows/kalender.yml"
 
 concurrency:
@@ -67,9 +68,20 @@ jobs:
 
       - name: Kalender erzeugen
         run: |
-          python fussballde_kalender.py --out tus-harpen.ics --json spiele.json --wappen wappen
+          # 90 Tage zurück, damit die Teamseiten auch nach Pausen die letzten 3 Spiele zeigen können
+          python fussballde_kalender.py --out tus-harpen.ics --json spiele.json --wappen wappen --days-back 90
           ls -l tus-harpen.ics
           ls wappen | wc -l
+
+      # Ligatabellen (Teamseiten der Homepage): höchstens einmal pro Stunde (Alter der Datei auf dem
+      # Webspace), bei Änderungen am Skript sofort
+      - name: Tabellen erzeugen
+        run: |
+          if [ "${{ github.event_name }}" != "push" ]; then
+            ALTER=$(curl -fsS https://spiele.tus-harpen.de/tabellen.json 2>/dev/null | python -c "import json,sys,datetime as d; s=json.load(sys.stdin)['stand']; print(int((d.datetime.now(d.timezone.utc)-d.datetime.fromisoformat(s)).total_seconds()))" 2>/dev/null || echo 999999)
+            if [ "$ALTER" -lt 3300 ]; then echo "Tabellen sind $ALTER s alt – nichts zu tun"; exit 0; fi
+          fi
+          python tabellen.py --out tabellen.json --wappen wappen || echo "::warning::Tabellen nicht aktualisiert"
 
       - name: Neue Wappen im Repository ablegen
         run: |
@@ -140,6 +152,7 @@ jobs:
           # Schriften (Barlow, wie auf der Homepage) ändern sich nie: ein Jahr zwischenspeichern
           printf '<IfModule mod_headers.c>\nHeader set Cache-Control "public, max-age=31536000"\n</IfModule>\n' > schriften/.htaccess
           LOGO=""; [ -f logo.png ] && LOGO="put logo.png;"
+          TABELLEN=""; [ -f tabellen.json ] && TABELLEN="put tabellen.json;"
           lftp --env-password -u "$SFTP_USER" "sftp://$SFTP_HOST" -e "
             set sftp:auto-confirm yes;
             set net:max-retries 2;
@@ -147,6 +160,7 @@ jobs:
             mkdir -p -f $ORDNER;
             cd $ORDNER;
             put spiele.json;
+            $TABELLEN
             put anzeige.html -o index.html;
             put anzeige.html;
             put spiele.htaccess -o .htaccess;

@@ -670,8 +670,13 @@ def download_logos(matches: list[Match], folder: Path) -> None:
     Die Wappen liegen danach auf dem eigenen Webspace; Besucher der Anzeige und der
     Homepage laden sie von dort und nicht von fussball.de.
     """
+    wappen_logos_laden({i for m in matches for i in (m.home_logo, m.away_logo) if i}, folder)
+
+
+def wappen_logos_laden(kennungen, folder: Path) -> None:
+    """Wappen zu den fussball.de-Kennungen laden (fehlende), freistellen und Korrekturen bereitstellen."""
     folder.mkdir(parents=True, exist_ok=True)
-    ids = sorted({i for m in matches for i in (m.home_logo, m.away_logo) if i})
+    ids = sorted(kennungen)
     missing = [i for i in ids if not (folder / f"{i}.png").exists()]
     session = requests.Session()
     session.headers.update({"User-Agent": "Vereinskalender-Skript (privater Kalender-Export)"})
@@ -704,7 +709,7 @@ def download_logos(matches: list[Match], folder: Path) -> None:
         if not name.endswith(WAPPEN_ENDUNG) and not (folder / name).exists():
             (folder / name).write_bytes((KORREKTUR_ORDNER / f"{logo_id}.png").read_bytes())
             print(f"Wappen: Korrektur {name} übernommen")
-    print(f"[{datetime.now():%H:%M:%S}] Wappen: {loaded} neu geladen, {len(ids)} insgesamt im Spielplan")
+    print(f"[{datetime.now():%H:%M:%S}] Wappen: {loaded} neu geladen, {len(ids)} insgesamt")
 
 
 def run_once(args) -> int:
