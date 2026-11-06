@@ -1,0 +1,259 @@
+{
+ "datei": "karten/Karte-Harpen-International-Europa.jpg",
+ "breite": 1600,
+ "hoehe": 1050,
+ "zoom": 5,
+ "mitte": [
+  50.5,
+  13.0
+ ],
+ "schrift": 30,
+ "markierungen": [
+  {
+   "art": "punkt",
+   "text": "Antalya",
+   "lat": 36.8866,
+   "lon": 30.703
+  },
+  {
+   "art": "punkt",
+   "text": "Barcelona",
+   "lat": 41.3826,
+   "lon": 2.1771
+  },
+  {
+   "art": "punkt",
+   "text": "Borkum",
+   "lat": 53.586,
+   "lon": 6.6915
+  },
+  {
+   "art": "punkt",
+   "text": "Cala Mesquida",
+   "lat": 39.7444,
+   "lon": 3.4332
+  },
+  {
+   "art": "punkt",
+   "text": "Camp Nou Barcelona",
+   "lat": 41.3808,
+   "lon": 2.1156
+  },
+  {
+   "art": "punkt",
+   "text": "Charyn Canyon",
+   "lat": 43.325,
+   "lon": 79.0586
+  },
+  {
+   "art": "punkt",
+   "text": "Chrysi Island",
+   "lat": 34.8728,
+   "lon": 25.711
+  },
+  {
+   "art": "punkt",
+   "text": "Dubai",
+   "lat": 25.2048,
+   "lon": 55.2708
+  },
+  {
+   "art": "punkt",
+   "text": "Faaker See",
+   "lat": 46.5764,
+   "lon": 13.9229
+  },
+  {
+   "art": "punkt",
+   "text": "Flughafen Rostock-Laage",
+   "lat": 53.9191,
+   "lon": 12.2772
+  },
+  {
+   "art": "punkt",
+   "text": "Gitschberg",
+   "lat": 46.8558,
+   "lon": 11.6865
+  },
+  {
+   "art": "punkt",
+   "text": "Gotland",
+   "lat": 57.4175,
+   "lon": 18.537
+  },
+  {
+   "art": "punkt",
+   "text": "Gran Canaria",
+   "lat": 27.958,
+   "lon": -15.6062
+  },
+  {
+   "art": "punkt",
+   "text": "Helsinki",
+   "lat": 60.1666,
+   "lon": 24.9435
+  },
+  {
+   "art": "punkt",
+   "text": "Kitzsteinhorn",
+   "lat": 47.188,
+   "lon": 12.6875
+  },
+  {
+   "art": "punkt",
+   "text": "Kopenhagen",
+   "lat": 55.6867,
+   "lon": 12.5701
+  },
+  {
+   "art": "punkt",
+   "text": "Langkawi Island",
+   "lat": 6.3683,
+   "lon": 99.793
+  },
+  {
+   "art": "punkt",
+   "text": "Lido di Jesolo",
+   "lat": 45.5033,
+   "lon": 12.6324
+  },
+  {
+   "art": "punkt",
+   "text": "Madrid",
+   "lat": 40.4168,
+   "lon": -3.7035
+  },
+  {
+   "art": "punkt",
+   "text": "Mayrhofen",
+   "lat": 47.1671,
+   "lon": 11.8642
+  },
+  {
+   "art": "punkt",
+   "text": "New York",
+   "lat": 40.7127,
+   "lon": -74.006
+  },
+  {
+   "art": "punkt",
+   "text": "Nordkap",
+   "lat": 71.17,
+   "lon": 25.7859
+  },
+  {
+   "art": "punkt",
+   "text": "Oberstdorf",
+   "lat": 47.3709,
+   "lon": 10.3119
+  },
+  {
+   "art": "punkt",
+   "text": "Oslo",
+   "lat": 59.9133,
+   "lon": 10.739
+  },
+  {
+   "art": "punkt",
+   "text": "Paris",
+   "lat": 48.8589,
+   "lon": 2.32
+  },
+  {
+   "art": "punkt",
+   "text": "Peguera",
+   "lat": 39.5378,
+   "lon": 2.4486
+  },
+  {
+   "art": "punkt",
+   "text": "Pisa",
+   "lat": 43.7228,
+   "lon": 10.4017
+  },
+  {
+   "art": "punkt",
+   "text": "Porec",
+   "lat": 45.2272,
+   "lon": 13.5957
+  },
+  {
+   "art": "punkt",
+   "text": "Port Greve",
+   "lat": 51.7368,
+   "lon": 3.9813
+  },
+  {
+   "art": "punkt",
+   "text": "Punta Cana",
+   "lat": 18.5566,
+   "lon": -68.3692
+  },
+  {
+   "art": "punkt",
+   "text": "San Diego",
+   "lat": 32.7157,
+   "lon": -117.1638
+  },
+  {
+   "art": "punkt",
+   "text": "St.Petersburg",
+   "lat": 59.9343,
+   "lon": 30.3351
+  },
+  {
+   "art": "punkt",
+   "text": "Sölden",
+   "lat": 46.9666,
+   "lon": 11.0073
+  },
+  {
+   "art": "punkt",
+   "text": "Tallin",
+   "lat": 59.4372,
+   "lon": 24.7573
+  },
+  {
+   "art": "punkt",
+   "text": "Ugento",
+   "lat": 39.9285,
+   "lon": 18.1623
+  },
+  {
+   "art": "punkt",
+   "text": "Valledoria",
+   "lat": 40.9283,
+   "lon": 8.8246
+  },
+  {
+   "art": "punkt",
+   "text": "Vang Vieng",
+   "lat": 18.9539,
+   "lon": 102.4564
+  },
+  {
+   "art": "punkt",
+   "text": "Whistler",
+   "lat": 50.1172,
+   "lon": -122.9543
+  },
+  {
+   "art": "punkt",
+   "text": "Willingen",
+   "lat": 51.2939,
+   "lon": 8.6061
+  },
+  {
+   "art": "punkt",
+   "text": "Zandvoort",
+   "lat": 52.3595,
+   "lon": 4.535
+  },
+  {
+   "text": "Heimat: TuS Harpen",
+   "lat": 51.50357,
+   "lon": 7.2783
+  }
+ ],
+ "link_text": "Karte öffnen ↗"
+}

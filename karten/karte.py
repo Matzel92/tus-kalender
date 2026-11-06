@@ -71,6 +71,11 @@ def main():
     f = ImageFont.truetype(SCHRIFT, cfg.get("schrift", 30)); fk = ImageFont.truetype(SCHRIFT, 26)
     for m in cfg["markierungen"]:
         x, y = welt(m["lat"], m["lon"], z); x -= x0; y -= y0
+        if m.get("art") == "punkt":       # Reiseziel: blauer Punkt mit weißem Rand, ohne Schild
+            r = 11
+            d.ellipse((x - r + 2, y - r + 3, x + r + 2, y + r + 3), fill=(0, 0, 0, 80))
+            d.ellipse((x - r, y - r, x + r, y + r), fill=BLAU, outline=WEISS, width=4)
+            continue
         if m.get("art") == "haltestelle":
             haltestelle(d, x, y); schild(d, x, y + (0 if m.get("unten") else -8), m["text"], fk, unten=m.get("unten", False))
         else:
