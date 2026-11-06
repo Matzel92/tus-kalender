@@ -19,7 +19,7 @@
 :root {
   --blue: #0B3D91;        /* Vereinsblau */
   --blue-deep: #082D6E;   /* Tafelgrund */
-  --blue-row: #0F4AA6;    /* abgesetzte Flächen */
+  --blue-row: #0B4199;    /* abgesetzte Flächen – wie der Kopfbereich der Homepage */
   --line: #2A5AAE;
   --white: #FFFFFF;
   --muted: #BCD0EF;
@@ -563,6 +563,8 @@ function kontrast(hex) {   // schwarz oder weiß – je nachdem, was auf der Hin
   const L = .2126 * ch[0] + .7152 * ch[1] + .0722 * ch[2];
   return (1.05 / (L + .05)) >= ((L + .05) / .05) ? "#FFFFFF" : "#000000";
 }
+// Schriftfarbe aus der Excel-Datei (Blatt „Mannschaften“, Spalte Schriftfarbe); fehlt sie, automatisch nach Kontrast
+function schriftfarbe(e) { return /^#[0-9A-F]{6}$/i.test(e.text || "") ? e.text : kontrast(e.farbe); }
 function felderText(f) { return f.map(x => FELDNAME[x] || x).join(" + "); }
 function istMeins(e) { return !S.team || e.mitglieder.includes(S.team) || e.team === S.team; }
 
@@ -636,7 +638,7 @@ function zeichnePlatz(aktiv) {
       s += '<rect x="' + (r.x + 3) + '" y="' + (r.y + 3) + '" width="' + (r.w - 6) + '" height="' + (r.h - 6) + '" rx="3" fill="' + e.farbe + '" fill-opacity=".9" stroke="' + (S.team && m ? "#fff" : "none") + '" stroke-width="3"/>';
       const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
       if (g[0] === "Laufbahn") {
-        s += '<text transform="translate(' + cx + ' ' + cy + ') rotate(-90)" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="17" fill="' + kontrast(e.farbe) + '">' + esc(e.team + " · bis " + e.bis) + '</text>';
+        s += '<text transform="translate(' + cx + ' ' + cy + ') rotate(-90)" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="17" fill="' + schriftfarbe(e) + '">' + esc(e.team + " · bis " + e.bis) + '</text>';
       } else {
         let fs = r.h < 120 ? 19 : 25;
         const lbl = e.mitglieder.length > 1 ? (e.kurz || e.team) : e.team;
@@ -645,8 +647,8 @@ function zeichnePlatz(aktiv) {
         const zeilen = umbruch(lbl, Math.floor((r.w - 18) / (fs * .56)));
         const h = zeilen.length * fs * 1.02 + 18;
         let y = cy - h / 2 + fs * .8;
-        for (const z of zeilen) { s += '<text x="' + cx + '" y="' + y + '" text-anchor="middle" font-weight="700" font-size="' + fs + '" fill="' + kontrast(e.farbe) + '">' + esc(z) + '</text>'; y += fs * 1.02; }
-        s += '<text x="' + cx + '" y="' + (y + 4) + '" text-anchor="middle" font-weight="600" font-size="14" fill="' + kontrast(e.farbe) + '">' + e.von + '–' + e.bis + '</text>';
+        for (const z of zeilen) { s += '<text x="' + cx + '" y="' + y + '" text-anchor="middle" font-weight="700" font-size="' + fs + '" fill="' + schriftfarbe(e) + '">' + esc(z) + '</text>'; y += fs * 1.02; }
+        s += '<text x="' + cx + '" y="' + (y + 4) + '" text-anchor="middle" font-weight="600" font-size="14" fill="' + schriftfarbe(e) + '">' + e.von + '–' + e.bis + '</text>';
       }
       s += '</g>';
     }
@@ -830,7 +832,7 @@ function renderWoche(p, now) {
         const txt = x === traeger ? '<span class="nm">' + esc(u.kurz || u.team).replace(/\//g, "/<wbr>").replace(/fußball/gi, m => m.slice(0, 3) + "&shy;" + m.slice(3)) + '</span>' + zeit : '';
         const info = u.team + " · " + TAGE[tag % 7] + " " + hm(von) + "–" + hm(bis) + (gs.length > 1 ? " (" + gs.map(y => y.e.von + "–" + y.e.bis + " " + felderText(y.e.felder)).filter((v, i, a) => a.indexOf(v) === i).join(", ") + ")" : " · " + felderText(u.felder));
         g += '<button type="button" class="blk' + (breit < 2 ? " s" : "") + (lb ? " lbk" : "") + (x === traeger && unten ? " ueber" : "") + (anders ? " other" : "") + (meins ? " mine" : "") + (unten ? " jb" : "") + (oben ? " jt" : "") + (untenVoll ? " gb0" : "") + (obenVoll ? " gt0" : "") + '" data-team="' + esc(u.mitglieder[0]) + '"' +
-          ' style="grid-row:' + x.r1 + '/' + x.r2 + ';grid-column:' + (x.a + 2) + '/' + (x.b + 3) + ';background:' + u.farbe + ';color:' + kontrast(u.farbe) +
+          ' style="grid-row:' + x.r1 + '/' + x.r2 + ';grid-column:' + (x.a + 2) + '/' + (x.b + 3) + ';background:' + u.farbe + ';color:' + schriftfarbe(u) +
           ';margin-top:' + (oben ? 0 : 1) + 'px;margin-bottom:' + (unten ? 0 : 1) + 'px;border-radius:' + r + '"' +
           ' title="' + esc(info) + '" aria-label="' + esc(info) + '"' + (x === traeger ? '' : ' tabindex="-1"') + '>' + txt + '</button>';
       }
