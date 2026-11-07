@@ -138,7 +138,7 @@ body {
 
 /* Wochenplan: je Tag ein Raster mit den Platzbereichen als Bahnen und 15-Minuten-Zeilen */
 .view { padding-block: clamp(10px, .9vw, 18px); min-width: 0; }
-.wk { --slot: clamp(9px, calc((100vh - 26em) / 48), 1.1em); --gx: clamp(8px, .8vw, 16px); display: grid; grid-template-columns: 2.6em repeat(3, minmax(0, 1fr)) 2.6em; gap: clamp(14px, 1.4vw, 26px) var(--gx); }
+.wk { --slot: clamp(9px, calc((100vh - 26em) / 44), 1.1em); --gx: clamp(8px, .8vw, 16px); display: grid; grid-template-columns: 2.6em repeat(3, minmax(0, 1fr)) 2.6em; gap: clamp(14px, 1.4vw, 26px) var(--gx); }
 .wk .rest { display: grid; grid-template-columns: 2.6em minmax(0, 1fr); column-gap: var(--gx); min-width: 0; }
 .day { min-width: 0; }
 .day h3 { margin: 0; line-height: 1.1; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 1.25em; padding-bottom: .15em; border-bottom: 3px solid var(--white); }
@@ -800,7 +800,7 @@ function gesamtZeit(tagE, u, von, bis) {
 function renderWoche(p, now) {
   const tage = wochentage(p);
   const vs = p.einheiten.map(e => min(e.von)), bs = p.einheiten.map(e => min(e.bis));
-  const start = vs.length ? Math.floor(Math.min(...vs) / 60) * 60 : 960, ende = bs.length ? Math.ceil(Math.max(...bs) / 60) * 60 : 1320;
+  const start = vs.length ? Math.floor(Math.min(...vs) / 60) * 60 : 960, ende = Math.max(1290, bs.length ? Math.ceil(Math.max(...bs) / 30) * 30 : 1290);   // Übersicht grundsätzlich bis 21:30
   const n = (ende - start) / 15, heute = wtag(now), tNow = now.getHours() * 60 + now.getMinutes();
   const wk = document.getElementById("wk");
   wk.style.setProperty("--days", tage.length);
