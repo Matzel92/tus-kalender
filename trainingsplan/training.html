@@ -637,6 +637,15 @@ function belegung(einheiten, tag, t) { return einheiten.filter(e => e.tag === ta
 function zeichnePlatz(aktiv) {
   let s = grundriss();
   const frei = new Set(["HL", "HR", "VL", "VR", "Kleinfeld", "Laufbahn"]);
+  const gruppenVon = e => [e.felder.filter(f => ["HL","HR","VL","VR"].includes(f)), e.felder.filter(f => f === "Kleinfeld"), e.felder.filter(f => f === "Laufbahn")].filter(g => g.length);
+  const beschriftung = e => e.mitglieder.length > 1 ? (e.kurz || e.team) : e.team;
+  // eine gemeinsame Schriftgröße für alle bunten Felder: höchstens 19, kleiner nur wenn ein Wort sonst irgendwo nicht passt
+  let fsAlle = 19;
+  for (const e of aktiv) for (const g of gruppenVon(e)) {
+    if (g[0] === "Laufbahn") continue;
+    const r = rechteck(g), laengstes = Math.max(...beschriftung(e).split(" ").map(x => x.length));
+    fsAlle = Math.min(fsAlle, (r.w - 18) / (laengstes * .56));
+  }
   for (const e of aktiv) {
     const gruppen = [e.felder.filter(f => ["HL","HR","VL","VR"].includes(f)), e.felder.filter(f => f === "Kleinfeld"), e.felder.filter(f => f === "Laufbahn")].filter(g => g.length);
     for (const g of gruppen) {
@@ -648,10 +657,7 @@ function zeichnePlatz(aktiv) {
       if (g[0] === "Laufbahn") {
         s += '<text transform="translate(' + cx + ' ' + cy + ') rotate(-90)" text-anchor="middle" dominant-baseline="central" font-weight="700" font-size="17" fill="' + schriftfarbe(e) + '">' + esc(e.team + " · bis " + e.bis) + '</text>';
       } else {
-        let fs = r.h < 120 ? 19 : 25;
-        const lbl = e.mitglieder.length > 1 ? (e.kurz || e.team) : e.team;
-        const laengstes = Math.max(...lbl.split(" ").map(x => x.length));
-        fs = Math.min(fs, (r.w - 18) / (laengstes * .56));
+        const fs = fsAlle, lbl = beschriftung(e);
         const zeilen = umbruch(lbl, Math.floor((r.w - 18) / (fs * .56)));
         const h = zeilen.length * fs * 1.02 + 18;
         let y = cy - h / 2 + fs * .8;
